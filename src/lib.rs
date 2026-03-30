@@ -9,16 +9,16 @@ extern crate proc_macro;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 
-pub(crate) type DiagnosticStream = DiagnosticResult<TokenStream2>;
+pub type DiagnosticStream = DiagnosticResult<TokenStream2>;
 
 #[derive(Debug)]
-pub(crate) enum DiagnosticResult<T> {
+pub enum DiagnosticResult<T> {
     Ok(T),
     Err(Diagnostic),
 }
 
 impl<T> DiagnosticResult<T> {
-    pub(crate) fn error<S: Display>(message: S) -> Self {
+    pub fn error<S: Display>(message: S) -> Self {
         Self::Err(Diagnostic {
             level: Level::Error,
             message: message.to_string(),
@@ -26,7 +26,7 @@ impl<T> DiagnosticResult<T> {
             children: vec![],
         })
     }
-    pub(crate) fn add_help<S: Display>(mut self, span: Span, message: S) -> Self {
+    pub fn add_help<S: Display>(mut self, span: Span, message: S) -> Self {
         let Self::Err(ref mut diagnostic) = self else {
             todo!()
         };
@@ -38,8 +38,7 @@ impl<T> DiagnosticResult<T> {
         });
         self
     }
-    #[allow(unused)]
-    pub(crate) fn unwrap(self) -> T {
+    pub fn unwrap(self) -> T {
         let Self::Ok(t) = self else {
             panic!("Called unwrap on a not-OK value")
         };
@@ -48,7 +47,7 @@ impl<T> DiagnosticResult<T> {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Diagnostic {
+pub struct Diagnostic {
     level: Level,
     message: String,
     spans: Vec<Span>,
