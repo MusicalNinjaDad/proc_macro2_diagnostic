@@ -2,6 +2,29 @@
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
 
+//! Provides a DiagnosticResult which stores a Diagnostic with the same API as
+//! [proc_macro::Diagnostic] and allows `?` usage to return early from proc_macro2 code.
+//!
+//! ```
+//! #![feature(never_type)]
+//! #![feature(try_trait_v2)]
+//! 
+//! # extern crate proc_macro;
+//!
+//! use proc_macro2_diagnostic::{DiagnosticResult,DiagnosticStream};
+//! use quote::quote;
+//!
+//! fn zst(name: &str) -> DiagnosticStream {
+//!     match name {
+//!         "fail" => DiagnosticResult::error("failed")?,
+//!         _ => DiagnosticResult::Ok(quote!{struct #name;}),
+//!     }
+//! }
+//! 
+//! // let oops = proc_macro::TokenStream::from(zst("fail"));
+//!
+//! ```
+
 use std::fmt::Display;
 
 extern crate proc_macro;

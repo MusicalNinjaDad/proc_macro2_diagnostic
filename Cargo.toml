@@ -16,4 +16,4 @@ include = ["/src/", "/tests/"]
 proc-macro2 = "1.0.106"
 
 [dev-dependencies]
-trybuild = "1.0.116"
+quote = "1.0.45"
