@@ -5,4 +5,4 @@ fn foo() {
     todo!()
 }
 
-fn main () {}
+fn main() {}
