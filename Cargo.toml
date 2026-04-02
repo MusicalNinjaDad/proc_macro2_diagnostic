@@ -12,8 +12,16 @@ categories = ["development-tools"]
 license = "MIT"
 include = ["/src/", "/tests/"]
 
+[lib]
+
 [dependencies]
 proc-macro2 = "1.0.106"
 
 [dev-dependencies]
 quote = "1.0.45"
+
+[workspace]
+members = ["tests/compilation"]
+
+[workspace.dependencies]
+proc_macro2_diagnostic = {path = "."}

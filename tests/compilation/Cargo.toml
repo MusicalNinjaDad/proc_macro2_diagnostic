@@ -1,0 +1,20 @@
+[package]
+name = "proc_macro2_diagnostic_fixture"
+version = "0.0.1"
+edition = "2024"
+publish = false
+description = "Test fixture for proc_macro2_diagnostic"
+authors = ["Mike Foster <https://github.com/MusicalNinjaDad>"]
+license = "MIT"
+
+[lib]
+proc-macro = true
+path = "lib.rs"
+
+[dependencies]
+proc-macro2 = "1.0.106"
+quote = "1.0.45"
+syn = "2.0.117"
+proc_macro2_diagnostic = { workspace = true }
+
+[dev-dependencies]
