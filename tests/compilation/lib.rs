@@ -15,6 +15,6 @@ fn zst(name: &str) -> DiagnosticStream {
 }
 
 #[proc_macro_attribute]
-pub fn oops(_: TokenStream, _:TokenStream) -> TokenStream {
+pub fn oops(_: TokenStream, _: TokenStream) -> TokenStream {
     proc_macro::TokenStream::from(zst("fail"))
 }
