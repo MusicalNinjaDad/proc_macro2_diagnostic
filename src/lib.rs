@@ -8,7 +8,7 @@
 //! ```
 //! #![feature(never_type)]
 //! #![feature(try_trait_v2)]
-//! 
+//!
 //! # extern crate proc_macro;
 //!
 //! use proc_macro2_diagnostic::{DiagnosticResult,DiagnosticStream};
@@ -20,7 +20,7 @@
 //!         _ => DiagnosticResult::Ok(quote!{struct #name;}),
 //!     }
 //! }
-//! 
+//!
 //! // let oops = proc_macro::TokenStream::from(zst("fail"));
 //!
 //! ```
