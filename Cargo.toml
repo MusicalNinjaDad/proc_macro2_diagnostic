@@ -18,10 +18,13 @@ include = ["/src/", "/tests/"]
 proc-macro2 = "1.0.106"
 
 [dev-dependencies]
+proc_macro2_diagnostic_fixture = {workspace = true}
 quote = "1.0.45"
+trybuild = "1.0.116"
 
 [workspace]
 members = ["tests/compilation"]
 
 [workspace.dependencies]
-proc_macro2_diagnostic = {path = "."}
+proc_macro2_diagnostic = { path = "." }
+proc_macro2_diagnostic_fixture = { path = "tests/compilation" }

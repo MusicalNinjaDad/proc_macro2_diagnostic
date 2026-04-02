@@ -4,3 +4,5 @@ use proc_macro2_diagnostic_fixture::oops;
 fn foo() {
     todo!()
 }
+
+fn main () {}

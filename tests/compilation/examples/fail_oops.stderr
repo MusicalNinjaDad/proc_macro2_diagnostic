@@ -1,0 +1,12 @@
+error: failed
+ --> tests/compilation/tests/fail_oops.rs:3:1
+  |
+3 | #[oops]
+  | ^^^^^^^
+  |
+help: haha
+ --> tests/compilation/tests/fail_oops.rs:3:1
+  |
+3 | #[oops]
+  | ^^^^^^^
+  = note: this error originates in the attribute macro `oops` (in Nightly builds, run with -Z macro-backtrace for more info)
