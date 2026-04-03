@@ -14,7 +14,13 @@ fn zst(name: &str) -> DiagnosticStream {
     match name {
         "fail" => DiagnosticResult::error("failed")?,
         "helpme" => DiagnosticResult::error("failed").add_help(Span::call_site(), "haha")?,
-        "warn" => DiagnosticResult::warn("be careful")?,
+        "warn" => {
+            let name = format_ident!("{name}");
+            let zst = quote! {struct #name;};
+            let zst = DiagnosticResult::warn_spanned(zst, Span::call_site(), "be careful")?;
+            DiagnosticResult::Ok(zst)
+        }
+        
         _ => {
             let name = format_ident!("{name}");
             DiagnosticResult::Ok(quote! {struct #name;})

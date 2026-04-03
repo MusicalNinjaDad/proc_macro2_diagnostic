@@ -54,6 +54,7 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// - TODO: #11 Provide complete Result API
 pub enum DiagnosticResult<T> {
     Ok(T),
+    Warning(T, Diagnostic),
     Err(Diagnostic),
 }
 
@@ -69,6 +70,27 @@ impl<T> DiagnosticResult<T> {
             spans: vec![Span::call_site()],
             children: vec![],
         })
+    }
+
+    /// Create a `Warning` result containing a `Warning` diagnostic at a given span _and_ a valid
+    /// value
+    ///
+    /// The message can be anything that implements `Display` - this means you can use
+    /// format_args!() to avoid intermediate allocations
+    pub fn warn_spanned<S: Display>(
+        value: T,
+        span: Span,
+        message: S,
+    ) -> Self {
+        Self::Warning(
+            value,
+            Diagnostic {
+                level: Level::Warning,
+                message: message.to_string(),
+                spans: vec![span],
+                children: vec![],
+            },
+        )
     }
 
     /// Add a `Help` message to an existing result, at a given span.
@@ -92,6 +114,7 @@ impl<T> DiagnosticResult<T> {
     pub fn unwrap(self) -> T {
         match self {
             Ok(t) => t,
+            Self::Warning(_, _) => todo!("How to unwrap a warning???"),
             Err(diagnostic) => panic!("Called unwrap on a not-OK value: {:?}", diagnostic),
         }
     }
@@ -126,7 +149,6 @@ pub struct Diagnostic {
 /// 1:1 match for [proc_macro::Level]
 enum Level {
     Error,
-    #[expect(unused)]
     Warning,
     #[expect(unused)]
     Note,
@@ -157,6 +179,7 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
     fn branch(self) -> std::ops::ControlFlow<Self::Residual, Self::Output> {
         match self {
             Self::Ok(t) => std::ops::ControlFlow::Continue(t),
+            Self::Warning(t, _) => std::ops::ControlFlow::Continue(t),
             Self::Err(d) => std::ops::ControlFlow::Break(DiagnosticResult::Err(d)),
         }
     }
@@ -193,6 +216,7 @@ impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
         match result {
             DiagnosticResult::Ok(t) => t.into(),
+            DiagnosticResult::Warning(t, _) => t.into(),
             DiagnosticResult::Err(diagnostic) => {
                 // MSV: unwrap requires rustc 1.29+ *without* semver exempt features
                 let spans = diagnostic.as_spans();
