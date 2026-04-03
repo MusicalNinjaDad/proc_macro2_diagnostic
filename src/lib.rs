@@ -94,16 +94,18 @@ impl<T> DiagnosticResult<T> {
     /// The message can be anything that implements `Display` - this means you can use
     /// format_args!() to avoid intermediate allocations
     pub fn add_help<S: Display>(mut self, span: Span, message: S) -> Self {
-        let Self::Err(ref mut diagnostic) = self else {
-            todo!()
-        };
-        diagnostic.children.push(Diagnostic {
-            level: Level::Help,
-            message: message.to_string(),
-            spans: vec![span],
-            children: vec![],
-        });
-        self
+        match self {
+            Ok(_) => todo!("Handle attempt to attach a help message to an OK value"),
+            DiagnosticResult::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
+                diagnostic.children.push(Diagnostic {
+                    level: Level::Help,
+                    message: message.to_string(),
+                    spans: vec![span],
+                    children: vec![],
+                });
+                self
+            }
+        }
     }
 
     /// Return the Ok result or panic
