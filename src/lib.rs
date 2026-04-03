@@ -28,9 +28,15 @@ use std::fmt::Display;
 extern crate proc_macro;
 
 use proc_macro::TokenStream as TokenStream1;
-use proc_macro2::{Span, TokenStream as TokenStream2};
+use proc_macro2::Span;
 
-pub type DiagnosticStream = DiagnosticResult<TokenStream2>;
+/// A convenience type which is designed to be returned from a proc_macro2-based macro
+/// implementation.
+/// Call `into`/`from`, not `?`, on this to return and convert the contained TokenStream
+/// and/or emit the diagnostic messages.
+///
+/// TODO: #9 Consider changing usage of DiagnosticStream to be Try-based instead of From-based.
+pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 
 #[derive(Debug)]
 pub enum DiagnosticResult<T> {
