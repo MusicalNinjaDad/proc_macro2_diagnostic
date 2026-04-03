@@ -51,7 +51,6 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// `warn_spanned()` which ensure all invariants are maintained.
 ///
 /// ### Future changes
-/// - TODO: #10 Extend to include Warnings etc. (emitted on `?`)
 /// - TODO: #11 Provide complete Result API
 pub enum DiagnosticResult<T> {
     Ok(T),
