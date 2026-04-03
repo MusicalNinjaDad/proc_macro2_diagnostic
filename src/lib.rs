@@ -119,6 +119,18 @@ impl<T> DiagnosticResult<T> {
         self
     }
 
+    pub fn extend_span(mut self, span: Span) -> Self {
+        let diagnostic = match self {
+            Ok(_) => todo!("Handle attempt to extend span of an OK value"),
+            DiagnosticResult::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
+                diagnostic
+            }
+        };
+        let newspan = diagnostic.spans[0].join(span).unwrap();
+        diagnostic.spans = vec![newspan];
+        self
+    }
+
     /// Return the Ok result or panic
     pub fn unwrap(self) -> T
     where

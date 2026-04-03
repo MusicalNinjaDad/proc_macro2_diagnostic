@@ -77,6 +77,6 @@ mod warn_multispan {
             ident.span(),
             format_args!("{} attributes counted", attributes.len()),
         )
-        .add_span(attributes.iter().next().unwrap().span())
+        .extend_span(attributes.iter().next().unwrap().span())
     }
 }
