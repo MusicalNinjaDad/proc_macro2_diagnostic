@@ -77,11 +77,7 @@ impl<T> DiagnosticResult<T> {
     ///
     /// The message can be anything that implements `Display` - this means you can use
     /// format_args!() to avoid intermediate allocations
-    pub fn warn_spanned<S: Display>(
-        value: T,
-        span: Span,
-        message: S,
-    ) -> Self {
+    pub fn warn_spanned<S: Display>(value: T, span: Span, message: S) -> Self {
         Self::Warning(
             value,
             Diagnostic {
@@ -179,7 +175,10 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
     fn branch(self) -> std::ops::ControlFlow<Self::Residual, Self::Output> {
         match self {
             Self::Ok(t) => std::ops::ControlFlow::Continue(t),
-            Self::Warning(t, _) => std::ops::ControlFlow::Continue(t),
+            Self::Warning(t, d) => {
+                d.emit();
+                std::ops::ControlFlow::Continue(t)
+            }
             Self::Err(d) => std::ops::ControlFlow::Break(DiagnosticResult::Err(d)),
         }
     }
@@ -216,7 +215,7 @@ impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
         match result {
             DiagnosticResult::Ok(t) => t.into(),
-            DiagnosticResult::Warning(t, _) => t.into(),
+            DiagnosticResult::Warning(_, _) => todo!("emit warning"),
             DiagnosticResult::Err(diagnostic) => {
                 // MSV: unwrap requires rustc 1.29+ *without* semver exempt features
                 let spans = diagnostic.as_spans();
@@ -232,6 +231,18 @@ impl From<DiagnosticStream> for TokenStream1 {
                 TokenStream1::new()
             }
         }
+    }
+}
+
+impl Diagnostic {
+    fn emit(self) {
+        let spans = self.as_spans();
+        let mut pm_diagnostic =
+            proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
+        for child in self.children {
+            pm_diagnostic = child.add_as_child(pm_diagnostic);
+        }
+        pm_diagnostic.emit();
     }
 }
 
