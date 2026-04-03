@@ -168,7 +168,11 @@ impl From<Level> for proc_macro::Level {
     }
 }
 
-// Standard Boilerplate implementation, mirroring [std::result::Result] until (#10) lands
+/// Will emit diagnositics in non-fatal cases:
+/// - `Ok(val)?` -> `val`
+/// - `Warning(val, diag)` -> `val` _and_ emits `diag` immediately
+/// - `Err(diag)` -> short-circuits with `Err(diag)` but _does NOT emit_ `diag` as this would lead to
+///   repeat emissions
 impl<T> std::ops::Try for DiagnosticResult<T> {
     type Output = T;
 
