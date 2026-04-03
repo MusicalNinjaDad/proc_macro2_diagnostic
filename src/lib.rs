@@ -23,7 +23,7 @@
 //!
 //! ```
 
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 extern crate proc_macro;
 
@@ -107,11 +107,17 @@ impl<T> DiagnosticResult<T> {
     }
 
     /// Return the Ok result or panic
-    pub fn unwrap(self) -> T {
+    pub fn unwrap(self) -> T
+    where
+        T: Debug,
+    {
         match self {
             Ok(t) => t,
-            Self::Warning(_, _) => todo!("How to unwrap a warning???"),
-            Err(diagnostic) => panic!("Called unwrap on a not-OK value: {:?}", diagnostic),
+            Self::Warning(val, warning) => panic!(
+                "Called unwrap on value {:?} with accompanying warning: {:?}",
+                val, warning
+            ),
+            Err(error) => panic!("Called unwrap on an error: {:?}", error),
         }
     }
 }
