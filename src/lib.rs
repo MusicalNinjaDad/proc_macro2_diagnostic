@@ -47,7 +47,8 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// functionality for non-OK cases.
 ///
 /// ### Usage
-/// **Do not directly create an `Err`, prefer usage of `error()`**
+/// It is deliberately not possible to directly create an `Err` etc., prefer usage of `error()`,
+/// `warn_spanned()` which ensure all invariants are maintained.
 ///
 /// ### Future changes
 /// - TODO: #10 Extend to include Warnings etc. (emitted on `?`)
