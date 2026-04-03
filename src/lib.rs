@@ -98,9 +98,9 @@ impl<T> DiagnosticResult<T> {
 #[derive(Debug, Clone)]
 /// The internal Diagnostic stored within DiagnosticResult.
 /// Not (currently) designed for direct usage.
-/// 
+///
 /// 1:1 structure to match [proc_macro::Diagnostic]
-/// 
+///
 /// ### Implementing [std::convert::TryFrom]
 /// As it is not possible to directly create a `Diagnostic`, use
 /// ```ignore code-snippet
@@ -180,10 +180,10 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
     }
 }
 
-/// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] or convert 
+/// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] or convert
 /// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty
 /// [proc_macro::TokenStream] in case of [DiagnosticResult::Err]
-/// 
+///
 /// ### Future changes
 /// - This may be removed with #9 in favour of leveraging [std::ops::Try]
 /// - Non-error diagnostics (#10) will provide a non-empty TokenStream
@@ -222,7 +222,7 @@ impl Diagnostic {
             Level::Help => parent.span_help(self.as_spans(), msg),
         }
     }
-    
+
     /// Get and convert the spans to use in a new [proc_macro::Diagnostic]
     fn as_spans(&self) -> Vec<proc_macro::Span> {
         self.spans.iter().map(|span| span.unwrap()).collect()
