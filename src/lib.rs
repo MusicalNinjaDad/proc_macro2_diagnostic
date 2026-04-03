@@ -30,6 +30,8 @@ extern crate proc_macro;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
 
+use crate::DiagnosticResult::{Err, Ok};
+
 /// A convenience type which is designed to be returned from a proc_macro2-based macro
 /// implementation.
 /// Call `into`/`from`, not `?`, on this to return and convert the contained TokenStream
@@ -88,10 +90,10 @@ impl<T> DiagnosticResult<T> {
 
     /// Return the Ok result or panic
     pub fn unwrap(self) -> T {
-        let Self::Ok(t) = self else {
-            panic!("Called unwrap on a not-OK value")
-        };
-        t
+        match self {
+            Ok(t) => t,
+            Err(diagnostic) => panic!("Called unwrap on a not-OK value: {:?}", diagnostic),
+        }
     }
 }
 
@@ -175,7 +177,7 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
 {
     fn from_residual(result: Result<std::convert::Infallible, DiagnosticResult<T>>) -> Self {
         match result {
-            Err(e) => e,
+            Result::Err(e) => e,
         }
     }
 }
