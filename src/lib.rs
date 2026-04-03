@@ -170,7 +170,7 @@ impl From<Level> for proc_macro::Level {
     }
 }
 
-//// Will emit diagnostics in non-fatal cases:
+/// Will emit diagnositics in non-fatal cases:
 /// - `Ok(val)?` -> `val`
 /// - `Warning(val, diag)` -> `val` _and_ emits `diag` immediately
 /// - `Err(diag)` -> short-circuits with `Err(diag)` but _does NOT emit_ `diag` as this would lead to
