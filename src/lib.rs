@@ -221,12 +221,14 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
 ///
 /// ### Future changes
 /// - This may be removed with #9 in favour of leveraging [std::ops::Try]
-/// - Non-error diagnostics (#10) will provide a non-empty TokenStream
 impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
         match result {
             DiagnosticResult::Ok(t) => t.into(),
-            DiagnosticResult::Warning(_, _) => todo!("emit warning"),
+            DiagnosticResult::Warning(t, warning) => {
+                warning.emit();
+                t.into()
+            }
             DiagnosticResult::Err(diagnostic) => {
                 // MSV: unwrap requires rustc 1.29+ *without* semver exempt features
                 let spans = diagnostic.as_spans();
