@@ -20,7 +20,13 @@ fn zst(name: &str) -> DiagnosticStream {
             let zst = DiagnosticResult::warn_spanned(zst, Span::call_site(), "be careful")?;
             DiagnosticResult::Ok(zst)
         }
-
+        "helpful_warning" => {
+            let name = format_ident!("{name}");
+            let zst = quote! {struct #name;};
+            let zst = DiagnosticResult::warn_spanned(zst, Span::call_site(), "be careful")
+                .add_help(Span::call_site(), "this might help you understand")?;
+            DiagnosticResult::Ok(zst)
+        }
         _ => {
             let name = format_ident!("{name}");
             DiagnosticResult::Ok(quote! {struct #name;})
@@ -46,4 +52,9 @@ pub fn no_error(_: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn warn(_: TokenStream) -> TokenStream {
     proc_macro::TokenStream::from(zst("warn"))
+}
+
+#[proc_macro]
+pub fn helpful_warning(_: TokenStream) -> TokenStream {
+    proc_macro::TokenStream::from(zst("helpful_warning"))
 }
