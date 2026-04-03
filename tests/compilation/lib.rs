@@ -26,6 +26,11 @@ pub fn error_and_help(_: TokenStream, _: TokenStream) -> TokenStream {
     proc_macro::TokenStream::from(zst("helpme"))
 }
 
+#[proc_macro_attribute]
+pub fn error(_: TokenStream, _: TokenStream) -> TokenStream {
+    proc_macro::TokenStream::from(zst("fail"))
+}
+
 #[proc_macro]
 pub fn no_error(_: TokenStream) -> TokenStream {
     proc_macro::TokenStream::from(zst("bingo"))
