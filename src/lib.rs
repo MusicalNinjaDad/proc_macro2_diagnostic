@@ -2,7 +2,7 @@
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
 
-//! Provides a DiagnosticResult which stores a Diagnostic with the same API as
+//! Provides a DiagnosticResult which stores a Diagnostic with the same (target) API as
 //! [proc_macro::Diagnostic] and allows `?` usage to return early from proc_macro2 code.
 //!
 //! ```
@@ -20,8 +20,6 @@
 //!         _ => DiagnosticResult::Ok(quote!{struct #name;}),
 //!     }
 //! }
-//!
-//! // let oops = proc_macro::TokenStream::from(zst("fail"));
 //!
 //! ```
 
