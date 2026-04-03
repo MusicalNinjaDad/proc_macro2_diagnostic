@@ -20,7 +20,7 @@ fn zst(name: &str) -> DiagnosticStream {
             let zst = DiagnosticResult::warn_spanned(zst, Span::call_site(), "be careful")?;
             DiagnosticResult::Ok(zst)
         }
-        
+
         _ => {
             let name = format_ident!("{name}");
             DiagnosticResult::Ok(quote! {struct #name;})
