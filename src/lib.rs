@@ -56,6 +56,10 @@ pub enum DiagnosticResult<T> {
 }
 
 impl<T> DiagnosticResult<T> {
+    /// Create an `Err` result containing an `Error` diagnostic **spanning the macro call_site**
+    ///
+    /// The message can be anything that implements `Display` - this means you can use
+    /// format_args!() to avoid intermediate allocations
     pub fn error<S: Display>(message: S) -> Self {
         Self::Err(Diagnostic {
             level: Level::Error,
@@ -64,6 +68,11 @@ impl<T> DiagnosticResult<T> {
             children: vec![],
         })
     }
+
+    /// Add a `Help` message to an existing result, at a given span.
+    ///
+    /// The message can be anything that implements `Display` - this means you can use
+    /// format_args!() to avoid intermediate allocations
     pub fn add_help<S: Display>(mut self, span: Span, message: S) -> Self {
         let Self::Err(ref mut diagnostic) = self else {
             todo!()
@@ -76,6 +85,8 @@ impl<T> DiagnosticResult<T> {
         });
         self
     }
+
+    /// Return the Ok result or panic
     pub fn unwrap(self) -> T {
         let Self::Ok(t) = self else {
             panic!("Called unwrap on a not-OK value")
