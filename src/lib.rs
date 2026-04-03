@@ -50,7 +50,7 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// **Do not directly create an `Err`, prefer usage of `error()`**
 ///
 /// ### Future changes
-/// - TODO: #10 Extend to include Warnings etc. (emited on `?`)
+/// - TODO: #10 Extend to include Warnings etc. (emitted on `?`)
 /// - TODO: #11 Provide complete Result API
 pub enum DiagnosticResult<T> {
     Ok(T),
@@ -170,7 +170,7 @@ impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     }
 }
 
-/// If you inadvertantly (or for "reasons") create a `Result<U,DiagnosticResult<T>>` then `?` will
+/// If you inadvertently (or for "reasons") create a `Result<U,DiagnosticResult<T>>` then `?` will
 /// convert and `Err` to a simple `DiagnosticResult<T>::Err`.
 impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult<T>>>
     for DiagnosticResult<T>
@@ -211,7 +211,7 @@ impl From<DiagnosticStream> for TokenStream1 {
     }
 }
 
-/// Supporting functions for the converstion to the proc_macro world
+/// Supporting functions for the conversion to the proc_macro world
 impl Diagnostic {
     /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
     /// Consumes both and returns a new [proc_macro::Diagnostic].
