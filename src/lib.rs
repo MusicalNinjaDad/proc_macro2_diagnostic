@@ -229,18 +229,8 @@ impl From<DiagnosticStream> for TokenStream1 {
                 warning.emit();
                 t.into()
             }
-            DiagnosticResult::Err(diagnostic) => {
-                // MSV: unwrap requires rustc 1.29+ *without* semver exempt features
-                let spans = diagnostic.as_spans();
-                let mut pm_diagnostic = proc_macro::Diagnostic::spanned(
-                    spans,
-                    diagnostic.level.into(),
-                    diagnostic.message,
-                );
-                for child in diagnostic.children {
-                    pm_diagnostic = child.add_as_child(pm_diagnostic);
-                }
-                pm_diagnostic.emit();
+            DiagnosticResult::Err(error) => {
+                error.emit();
                 TokenStream1::new()
             }
         }
@@ -248,6 +238,7 @@ impl From<DiagnosticStream> for TokenStream1 {
 }
 
 impl Diagnostic {
+    /// Convert to a [proc_macro::Diagnostic] and then emit
     fn emit(self) {
         let spans = self.as_spans();
         let mut pm_diagnostic =
