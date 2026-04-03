@@ -96,6 +96,23 @@ impl<T> DiagnosticResult<T> {
 }
 
 #[derive(Debug, Clone)]
+/// The internal Diagnostic stored within DiagnosticResult.
+/// Not (currently) designed for direct usage.
+/// 
+/// 1:1 structure to match [proc_macro::Diagnostic]
+/// 
+/// ### Implementing [std::convert::TryFrom]
+/// As it is not possible to directly create a `Diagnostic`, use
+/// ```ignore code-snippet
+/// impl TryFrom ... {
+///     type Error = DiagnosticResult<T>
+///     fn try_from ... -> Result<T, DiagnosticResult<T>> {
+///         ...
+///     }
+/// }
+/// ```
+/// which is a little ugly, but will simplify to either `T` or an unwrapped `DiagnosticResult<T>`
+/// on `?`
 pub struct Diagnostic {
     level: Level,
     message: String,
@@ -104,6 +121,7 @@ pub struct Diagnostic {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// 1:1 match for [proc_macro::Level]
 enum Level {
     Error,
     #[expect(unused)]
@@ -124,6 +142,7 @@ impl From<Level> for proc_macro::Level {
     }
 }
 
+// Standard Boilerplate implementation, mirroring [std::result::Result] until (#10) lands
 impl<T> std::ops::Try for DiagnosticResult<T> {
     type Output = T;
 
@@ -149,6 +168,8 @@ impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     }
 }
 
+/// If you inadvertantly (or for "reasons") create a `Result<U,DiagnosticResult<T>>` then `?` will
+/// convert and `Err` to a simple `DiagnosticResult<T>::Err`.
 impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult<T>>>
     for DiagnosticResult<T>
 {
@@ -159,24 +180,13 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
     }
 }
 
-impl Diagnostic {
-    fn add_as_child(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
-        let msg = self.message.clone();
-        match self.level {
-            Level::Error => parent.span_error(self.as_spans(), msg),
-            Level::Warning => parent.span_warning(self.as_spans(), msg),
-            Level::Note => parent.span_note(self.as_spans(), msg),
-            Level::Help => parent.span_help(self.as_spans(), msg),
-        }
-    }
-}
-
-impl Diagnostic {
-    fn as_spans(&self) -> Vec<proc_macro::Span> {
-        self.spans.iter().map(|span| span.unwrap()).collect()
-    }
-}
-
+/// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] or convert 
+/// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty
+/// [proc_macro::TokenStream] in case of [DiagnosticResult::Err]
+/// 
+/// ### Future changes
+/// - This may be removed with #9 in favour of leveraging [std::ops::Try]
+/// - Non-error diagnostics (#10) will provide a non-empty TokenStream
 impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
         match result {
@@ -196,5 +206,25 @@ impl From<DiagnosticStream> for TokenStream1 {
                 TokenStream1::new()
             }
         }
+    }
+}
+
+/// Supporting functions for the converstion to the proc_macro world
+impl Diagnostic {
+    /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
+    /// Consumes both and returns a new [proc_macro::Diagnostic].
+    fn add_as_child(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
+        let msg = self.message.clone();
+        match self.level {
+            Level::Error => parent.span_error(self.as_spans(), msg),
+            Level::Warning => parent.span_warning(self.as_spans(), msg),
+            Level::Note => parent.span_note(self.as_spans(), msg),
+            Level::Help => parent.span_help(self.as_spans(), msg),
+        }
+    }
+    
+    /// Get and convert the spans to use in a new [proc_macro::Diagnostic]
+    fn as_spans(&self) -> Vec<proc_macro::Span> {
+        self.spans.iter().map(|span| span.unwrap()).collect()
     }
 }
