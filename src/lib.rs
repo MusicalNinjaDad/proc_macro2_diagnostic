@@ -48,8 +48,8 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// **Do not directly create an `Err`, prefer usage of `error()`**
 ///
 /// ### Future changes
-/// - TODO: Extend to include Warnings etc. (emited on `?`)
-/// - TODO: Provide complete Result API
+/// - TODO: #10 Extend to include Warnings etc. (emited on `?`)
+/// - TODO: #11 Provide complete Result API
 pub enum DiagnosticResult<T> {
     Ok(T),
     Err(Diagnostic),
