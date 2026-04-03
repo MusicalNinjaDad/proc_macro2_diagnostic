@@ -1,0 +1,12 @@
+error: failed
+ --> tests/compilation/examples/fail_error_and_help.rs:3:1
+  |
+3 | #[error_and_help]
+  | ^^^^^^^^^^^^^^^^^
+  |
+help: haha
+ --> tests/compilation/examples/fail_error_and_help.rs:3:1
+  |
+3 | #[error_and_help]
+  | ^^^^^^^^^^^^^^^^^
+  = note: this error originates in the attribute macro `error_and_help` (in Nightly builds, run with -Z macro-backtrace for more info)
