@@ -23,7 +23,7 @@
 //!
 //! ```
 
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 extern crate proc_macro;
 
@@ -47,13 +47,14 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// functionality for non-OK cases.
 ///
 /// ### Usage
-/// **Do not directly create an `Err`, prefer usage of `error()`**
+/// It is deliberately not possible to directly create an `Err` etc., prefer usage of `error()`,
+/// `warn_spanned()` which ensure all invariants are maintained.
 ///
 /// ### Future changes
-/// - TODO: #10 Extend to include Warnings etc. (emitted on `?`)
 /// - TODO: #11 Provide complete Result API
 pub enum DiagnosticResult<T> {
     Ok(T),
+    Warning(T, Diagnostic),
     Err(Diagnostic),
 }
 
@@ -71,28 +72,54 @@ impl<T> DiagnosticResult<T> {
         })
     }
 
+    /// Create a `Warning` result containing a `Warning` diagnostic at a given span _and_ a valid
+    /// value
+    ///
+    /// The message can be anything that implements `Display` - this means you can use
+    /// format_args!() to avoid intermediate allocations
+    pub fn warn_spanned<S: Display>(value: T, span: Span, message: S) -> Self {
+        Self::Warning(
+            value,
+            Diagnostic {
+                level: Level::Warning,
+                message: message.to_string(),
+                spans: vec![span],
+                children: vec![],
+            },
+        )
+    }
+
     /// Add a `Help` message to an existing result, at a given span.
     ///
     /// The message can be anything that implements `Display` - this means you can use
     /// format_args!() to avoid intermediate allocations
     pub fn add_help<S: Display>(mut self, span: Span, message: S) -> Self {
-        let Self::Err(ref mut diagnostic) = self else {
-            todo!()
-        };
-        diagnostic.children.push(Diagnostic {
-            level: Level::Help,
-            message: message.to_string(),
-            spans: vec![span],
-            children: vec![],
-        });
-        self
+        match self {
+            Ok(_) => todo!("Handle attempt to attach a help message to an OK value"),
+            DiagnosticResult::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
+                diagnostic.children.push(Diagnostic {
+                    level: Level::Help,
+                    message: message.to_string(),
+                    spans: vec![span],
+                    children: vec![],
+                });
+                self
+            }
+        }
     }
 
     /// Return the Ok result or panic
-    pub fn unwrap(self) -> T {
+    pub fn unwrap(self) -> T
+    where
+        T: Debug,
+    {
         match self {
             Ok(t) => t,
-            Err(diagnostic) => panic!("Called unwrap on a not-OK value: {:?}", diagnostic),
+            Self::Warning(val, warning) => panic!(
+                "Called unwrap on value {:?} with accompanying warning: {:?}",
+                val, warning
+            ),
+            Err(error) => panic!("Called unwrap on an error: {:?}", error),
         }
     }
 }
@@ -126,7 +153,6 @@ pub struct Diagnostic {
 /// 1:1 match for [proc_macro::Level]
 enum Level {
     Error,
-    #[expect(unused)]
     Warning,
     #[expect(unused)]
     Note,
@@ -144,7 +170,11 @@ impl From<Level> for proc_macro::Level {
     }
 }
 
-// Standard Boilerplate implementation, mirroring [std::result::Result] until (#10) lands
+/// Will emit diagnostics in non-fatal cases:
+/// - `Ok(val)?` -> `val`
+/// - `Warning(val, diag)` -> `val` _and_ emits `diag` immediately
+/// - `Err(diag)` -> short-circuits with `Err(diag)` but _does NOT emit_ `diag` as this would lead to
+///   repeat emissions
 impl<T> std::ops::Try for DiagnosticResult<T> {
     type Output = T;
 
@@ -157,6 +187,10 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
     fn branch(self) -> std::ops::ControlFlow<Self::Residual, Self::Output> {
         match self {
             Self::Ok(t) => std::ops::ControlFlow::Continue(t),
+            Self::Warning(t, d) => {
+                d.emit();
+                std::ops::ControlFlow::Continue(t)
+            }
             Self::Err(d) => std::ops::ControlFlow::Break(DiagnosticResult::Err(d)),
         }
     }
@@ -182,32 +216,38 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
     }
 }
 
-/// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] or convert
+/// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] and/or convert
 /// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty
 /// [proc_macro::TokenStream] in case of [DiagnosticResult::Err]
 ///
 /// ### Future changes
 /// - This may be removed with #9 in favour of leveraging [std::ops::Try]
-/// - Non-error diagnostics (#10) will provide a non-empty TokenStream
 impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
         match result {
             DiagnosticResult::Ok(t) => t.into(),
-            DiagnosticResult::Err(diagnostic) => {
-                // MSV: unwrap requires rustc 1.29+ *without* semver exempt features
-                let spans = diagnostic.as_spans();
-                let mut pm_diagnostic = proc_macro::Diagnostic::spanned(
-                    spans,
-                    diagnostic.level.into(),
-                    diagnostic.message,
-                );
-                for child in diagnostic.children {
-                    pm_diagnostic = child.add_as_child(pm_diagnostic);
-                }
-                pm_diagnostic.emit();
+            DiagnosticResult::Warning(t, warning) => {
+                warning.emit();
+                t.into()
+            }
+            DiagnosticResult::Err(error) => {
+                error.emit();
                 TokenStream1::new()
             }
         }
+    }
+}
+
+impl Diagnostic {
+    /// Convert to a [proc_macro::Diagnostic] and then emit
+    fn emit(self) {
+        let spans = self.as_spans();
+        let mut pm_diagnostic =
+            proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
+        for child in self.children {
+            pm_diagnostic = child.add_as_child(pm_diagnostic);
+        }
+        pm_diagnostic.emit();
     }
 }
 
