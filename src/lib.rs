@@ -35,10 +35,21 @@ use proc_macro2::Span;
 /// Call `into`/`from`, not `?`, on this to return and convert the contained TokenStream
 /// and/or emit the diagnostic messages.
 ///
-/// TODO: #9 Consider changing usage of DiagnosticStream to be Try-based instead of From-based.
+/// ### Future changes:
+/// - TODO: #9 Consider changing usage of DiagnosticStream to be Try-based instead of From-based.
 pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 
 #[derive(Debug)]
+#[non_exhaustive]
+/// Result-like type which wraps any Ok-type and provides a `Diagnostic`-like API &
+/// functionality for non-OK cases.
+///
+/// ### Usage
+/// **Do not directly create an `Err`, prefer usage of `error()`**
+///
+/// ### Future changes
+/// - TODO: Extend to include Warnings etc. (emited on `?`)
+/// - TODO: Provide complete Result API
 pub enum DiagnosticResult<T> {
     Ok(T),
     Err(Diagnostic),
