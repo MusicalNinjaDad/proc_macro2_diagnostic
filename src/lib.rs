@@ -58,33 +58,6 @@ pub enum DiagnosticResult<T> {
     Err(Diagnostic),
 }
 
-/// A helper trait for APIs that accept one or more `Span`s.
-///
-/// This mirrors the behavior of [proc_macro::diagnostic::MultiSpan] and allows
-/// callers to pass a `Span`, `Vec<Span>`, or `&[Span]` to supported APIs.
-pub trait MultiSpan {
-    /// Consume `self` and convert into an owned `Vec<Span>`.
-    fn into_spans(self) -> Vec<Span>;
-}
-
-impl MultiSpan for Span {
-    fn into_spans(self) -> Vec<Span> {
-        vec![self]
-    }
-}
-
-impl MultiSpan for Vec<Span> {
-    fn into_spans(self) -> Vec<Span> {
-        self
-    }
-}
-
-impl MultiSpan for &[Span] {
-    fn into_spans(self) -> Vec<Span> {
-        self.to_vec()
-    }
-}
-
 impl<T> DiagnosticResult<T> {
     /// Create an `Err` result containing an `Error` diagnostic **spanning the macro call_site**
     ///
@@ -194,6 +167,33 @@ impl From<Level> for proc_macro::Level {
             Level::Note => Self::Note,
             Level::Warning => Self::Warning,
         }
+    }
+}
+
+/// A helper trait for APIs that accept one or more `Span`s.
+///
+/// This mirrors the behavior of [proc_macro::diagnostic::MultiSpan] and allows
+/// callers to pass a `Span`, `Vec<Span>`, or `&[Span]` to supported APIs.
+pub trait MultiSpan {
+    /// Consume `self` and convert into an owned `Vec<Span>`.
+    fn into_spans(self) -> Vec<Span>;
+}
+
+impl MultiSpan for Span {
+    fn into_spans(self) -> Vec<Span> {
+        vec![self]
+    }
+}
+
+impl MultiSpan for Vec<Span> {
+    fn into_spans(self) -> Vec<Span> {
+        self
+    }
+}
+
+impl MultiSpan for &[Span] {
+    fn into_spans(self) -> Vec<Span> {
+        self.to_vec()
     }
 }
 
