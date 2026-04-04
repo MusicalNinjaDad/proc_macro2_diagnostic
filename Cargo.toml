@@ -1,9 +1,9 @@
 [package]
 name = "proc_macro2_diagnostic"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2024"
 readme = "README.md"
-description = "Use `Diagnostic` compiler messages from proc_macro2 code."
+description = "Use `Diagnostic` compiler messages from proc_macro2 code with Result-like syntax."
 authors = ["Mike Foster <https://github.com/MusicalNinjaDad>"]
 keywords = ["proc_macro2", "Diagnostic", "Try"]
 homepage = "https://github.com/MusicalNinjaDad/proc_macro2_diagnostic"
