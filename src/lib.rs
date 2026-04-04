@@ -61,8 +61,8 @@ pub enum DiagnosticResult<T> {
 impl<T> DiagnosticResult<T> {
     /// Create an `Err` result containing an `Error` diagnostic **spanning the macro call_site**
     ///
-    /// The message can be anything that implements `Display` - this means you can use
-    /// format_args!() to avoid intermediate allocations
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations
     pub fn error<MSG: ToString>(message: MSG) -> Self {
         Self::Err(Diagnostic {
             level: Level::Error,
@@ -75,8 +75,8 @@ impl<T> DiagnosticResult<T> {
     /// Create a `Warning` result containing a `Warning` diagnostic at one or more spans
     /// _and_ a valid value.
     ///
-    /// The message can be anything that implements `Display` - this means you can use
-    /// format_args!() to avoid intermediate allocations.
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations
     pub fn warn_spanned<MSG: ToString, SPN: MultiSpan>(value: T, span: SPN, message: MSG) -> Self {
         Self::Warning(
             value,
@@ -91,8 +91,8 @@ impl<T> DiagnosticResult<T> {
 
     /// Add a `Help` message to an existing result at one or more spans.
     ///
-    /// The message can be anything that implements `Display` - this means you can use
-    /// format_args!() to avoid intermediate allocations.
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations
     pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self {
             Ok(_) => todo!("Handle attempt to attach a help message to an OK value"),
