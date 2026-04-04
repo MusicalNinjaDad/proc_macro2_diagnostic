@@ -50,7 +50,7 @@ pub fn no_error(_: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn multi_span_warn(input: TokenStream) -> TokenStream {
+pub fn vec_span_warn(input: TokenStream) -> TokenStream {
     let input: proc_macro2::TokenStream = input.into();
     let spans: Vec<Span> = input
         .into_iter()
@@ -59,13 +59,13 @@ pub fn multi_span_warn(input: TokenStream) -> TokenStream {
             _ => None,
         })
         .collect();
-    let ts = quote! { struct MultiWarn; };
+    let ts = quote! { struct VecSpanWarn; };
     let result = DiagnosticResult::warn_spanned(ts, spans, "warning with multiple spans");
     proc_macro::TokenStream::from(result)
 }
 
 #[proc_macro]
-pub fn multi_span_help(input: TokenStream) -> TokenStream {
+pub fn span_slice_help(input: TokenStream) -> TokenStream {
     let input: proc_macro2::TokenStream = input.into();
     let spans: Vec<Span> = input
         .into_iter()
@@ -74,7 +74,7 @@ pub fn multi_span_help(input: TokenStream) -> TokenStream {
             _ => None,
         })
         .collect();
-    let ts = quote! { struct MultiHelp; };
+    let ts = quote! { struct SpanSliceHelp; };
     let result = DiagnosticResult::warn_spanned(ts, Span::call_site(), "warning")
         .add_help(&spans[..], "help with multiple spans");
     proc_macro::TokenStream::from(result)
