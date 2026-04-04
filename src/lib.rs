@@ -50,7 +50,8 @@ use crate::DiagnosticResult::{Err, Ok};
 /// and/or emit the diagnostic messages.
 pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
+#[must_use = "this `DiagnosticResult` may be an `Err` variant, which should be handled, or a Warning, which should be emitted"]
 #[non_exhaustive]
 /// Result-like type which wraps any Ok-type and provides a `Diagnostic`-like API &
 /// functionality for non-OK cases.
