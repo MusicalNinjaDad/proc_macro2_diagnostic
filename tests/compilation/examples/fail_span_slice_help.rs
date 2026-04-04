@@ -10,5 +10,5 @@ fn foo() {
 span_slice_help!(help1 help2);
 
 fn main() {
-    let _foo: SpanSliceHelp = SpanSliceHelp; 
+    let _foo: SpanSliceHelp = SpanSliceHelp;
 }
