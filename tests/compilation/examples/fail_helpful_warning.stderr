@@ -17,4 +17,9 @@ help: this might help you understand
    |
 10 | helpful_warning!();
    | ^^^^^^^^^^^^^^^^^^
+note: this warning originates from the macro invocation here
+  --> tests/compilation/examples/fail_helpful_warning.rs:10:1
+   |
+10 | helpful_warning!();
+   | ^^^^^^^^^^^^^^^^^^
    = note: this warning originates in the macro `helpful_warning` (in Nightly builds, run with -Z macro-backtrace for more info)

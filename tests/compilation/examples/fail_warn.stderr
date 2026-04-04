@@ -12,4 +12,9 @@ warning: be careful
 10 | warn!();
    | ^^^^^^^
    |
+note: this warning originates from the macro invocation here
+  --> tests/compilation/examples/fail_warn.rs:10:1
+   |
+10 | warn!();
+   | ^^^^^^^
    = note: this warning originates in the macro `warn` (in Nightly builds, run with -Z macro-backtrace for more info)
