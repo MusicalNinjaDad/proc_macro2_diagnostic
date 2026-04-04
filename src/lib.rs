@@ -58,12 +58,12 @@ pub enum DiagnosticResult<T> {
     Err(Diagnostic),
 }
 
-/// A helper trait for APIs that accept one or more spans.
+/// A helper trait for APIs that accept one or more `Span`s.
 ///
 /// This mirrors the behavior of [proc_macro::diagnostic::MultiSpan] and allows
 /// callers to pass a `Span`, `Vec<Span>`, or `&[Span]` to supported APIs.
 pub trait MultiSpan {
-    /// Convert this value into an owned list of spans.
+    /// Consume `self` and convert into an owned `Vec<Span>`.
     fn into_spans(self) -> Vec<Span>;
 }
 
