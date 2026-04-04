@@ -253,6 +253,8 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
     }
 }
 
+// TODO: #17 impl<T> FromResidual<Result<!, syn::Error>> for DiagnosticResult<T>
+
 /// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] and/or convert
 /// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty
 /// [proc_macro::TokenStream] in case of [DiagnosticResult::Err]
