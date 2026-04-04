@@ -36,9 +36,6 @@ use crate::DiagnosticResult::{Err, Ok};
 /// implementation.
 /// Call `into`/`from`, not `?`, on this to return and convert the contained TokenStream
 /// and/or emit the diagnostic messages.
-///
-/// ### Future changes:
-/// - TODO: #9 Consider changing usage of DiagnosticStream to be Try-based instead of From-based.
 pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 
 #[derive(Debug)]
@@ -247,9 +244,6 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
 /// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] and/or convert
 /// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty
 /// [proc_macro::TokenStream] in case of [DiagnosticResult::Err]
-///
-/// ### Future changes
-/// - This may be removed with #9 in favour of leveraging [std::ops::Try]
 impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
         match result {
