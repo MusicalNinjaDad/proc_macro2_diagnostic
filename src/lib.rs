@@ -119,6 +119,8 @@ impl<T> DiagnosticResult<T> {
         }
     }
 
+    // TODO: #18 pub fn add_note()
+
     /// Return the Ok result or panic
     pub fn unwrap(self) -> T
     where
