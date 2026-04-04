@@ -77,6 +77,8 @@ impl<T> DiagnosticResult<T> {
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations
+    ///
+    /// A note will be added to the warning when emitted, which highlights the original call site.
     pub fn warn_spanned<MSG: ToString, SPN: MultiSpan>(value: T, span: SPN, message: MSG) -> Self {
         Self::Warning(
             value,
@@ -154,7 +156,6 @@ pub struct Diagnostic {
 enum Level {
     Error,
     Warning,
-    #[expect(unused)]
     Note,
     Help,
 }
@@ -267,7 +268,16 @@ impl From<DiagnosticStream> for TokenStream1 {
 
 impl Diagnostic {
     /// Convert to a [proc_macro::Diagnostic] and then emit
-    fn emit(self) {
+    fn emit(mut self) {
+        if matches!(self.level, Level::Warning) {
+            let source_note = Diagnostic {
+                level: Level::Note,
+                message: "this warning originates from the macro invocation here".to_string(),
+                spans: vec![Span::call_site()],
+                children: vec![],
+            };
+            self.children.push(source_note);
+        }
         let spans = self.as_spans();
         let mut pm_diagnostic =
             proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
