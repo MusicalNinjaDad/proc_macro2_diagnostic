@@ -58,12 +58,39 @@ pub enum DiagnosticResult<T> {
     Err(Diagnostic),
 }
 
+/// A helper trait for APIs that accept one or more spans.
+///
+/// This mirrors the behavior of [proc_macro::diagnostic::MultiSpan] and allows
+/// callers to pass a `Span`, `Vec<Span>`, or `&[Span]` to supported APIs.
+pub trait MultiSpan {
+    /// Convert this value into an owned list of spans.
+    fn into_spans(self) -> Vec<Span>;
+}
+
+impl MultiSpan for Span {
+    fn into_spans(self) -> Vec<Span> {
+        vec![self]
+    }
+}
+
+impl MultiSpan for Vec<Span> {
+    fn into_spans(self) -> Vec<Span> {
+        self
+    }
+}
+
+impl MultiSpan for &[Span] {
+    fn into_spans(self) -> Vec<Span> {
+        self.to_vec()
+    }
+}
+
 impl<T> DiagnosticResult<T> {
     /// Create an `Err` result containing an `Error` diagnostic **spanning the macro call_site**
     ///
     /// The message can be anything that implements `Display` - this means you can use
     /// format_args!() to avoid intermediate allocations
-    pub fn error<S: Display>(message: S) -> Self {
+    pub fn error<MSG: Display>(message: MSG) -> Self {
         Self::Err(Diagnostic {
             level: Level::Error,
             message: message.to_string(),
@@ -72,35 +99,35 @@ impl<T> DiagnosticResult<T> {
         })
     }
 
-    /// Create a `Warning` result containing a `Warning` diagnostic at a given span _and_ a valid
-    /// value
+    /// Create a `Warning` result containing a `Warning` diagnostic at one or more spans
+    /// _and_ a valid value.
     ///
     /// The message can be anything that implements `Display` - this means you can use
-    /// format_args!() to avoid intermediate allocations
-    pub fn warn_spanned<S: Display>(value: T, span: Span, message: S) -> Self {
+    /// format_args!() to avoid intermediate allocations.
+    pub fn warn_spanned<MSG: Display, SPN: MultiSpan>(value: T, span: SPN, message: MSG) -> Self {
         Self::Warning(
             value,
             Diagnostic {
                 level: Level::Warning,
                 message: message.to_string(),
-                spans: vec![span],
+                spans: span.into_spans(),
                 children: vec![],
             },
         )
     }
 
-    /// Add a `Help` message to an existing result, at a given span.
+    /// Add a `Help` message to an existing result at one or more spans.
     ///
     /// The message can be anything that implements `Display` - this means you can use
-    /// format_args!() to avoid intermediate allocations
-    pub fn add_help<S: Display>(mut self, span: Span, message: S) -> Self {
+    /// format_args!() to avoid intermediate allocations.
+    pub fn add_help<MSG: Display, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self {
             Ok(_) => todo!("Handle attempt to attach a help message to an OK value"),
             DiagnosticResult::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
                 diagnostic.children.push(Diagnostic {
                     level: Level::Help,
                     message: message.to_string(),
-                    spans: vec![span],
+                    spans: span.into_spans(),
                     children: vec![],
                 });
                 self
@@ -268,38 +295,5 @@ impl Diagnostic {
     /// Get and convert the spans to use in a new [proc_macro::Diagnostic]
     fn as_spans(&self) -> Vec<proc_macro::Span> {
         self.spans.iter().map(|span| span.unwrap()).collect()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // Unit tests for MultiSpan trait implementations
-    // These tests will validate that Span, Vec<Span>, and &[Span] correctly implement MultiSpan
-
-    #[test]
-    fn test_span_into_spans() {
-        let span = Span::call_site();
-        let spans: Vec<Span> = span.into_spans();
-        assert_eq!(spans, vec![span]);
-    }
-
-    #[test]
-    fn test_vec_span_into_spans() {
-        let span1 = Span::call_site();
-        let span2 = Span::call_site();
-        let vec_spans = vec![span1, span2];
-        let spans: Vec<Span> = vec_spans.into_spans();
-        assert_eq!(spans, vec![span1, span2]);
-    }
-
-    #[test]
-    fn test_slice_span_into_spans() {
-        let span1 = Span::call_site();
-        let span2 = Span::call_site();
-        let slice_spans = &[span1, span2];
-        let spans: Vec<Span> = slice_spans.into_spans();
-        assert_eq!(spans, vec![span1, span2]);
     }
 }

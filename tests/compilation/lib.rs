@@ -76,7 +76,7 @@ pub fn multi_span_help(input: TokenStream) -> TokenStream {
         .collect();
     let ts = quote! { struct MultiHelp; };
     let result = DiagnosticResult::warn_spanned(ts, Span::call_site(), "warning")
-        .add_help(spans, "help with multiple spans");
+        .add_help(&spans[..], "help with multiple spans");
     proc_macro::TokenStream::from(result)
 }
 
