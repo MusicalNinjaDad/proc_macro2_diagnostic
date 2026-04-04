@@ -64,7 +64,7 @@ pub fn warn_multispan(input: TokenStream) -> TokenStream {
 }
 
 mod warn_multispan {
-    use proc_macro2::{Span, TokenStream};
+    use proc_macro2::TokenStream;
     use proc_macro2_diagnostic::{DiagnosticResult, DiagnosticStream};
     use syn::{DeriveInput, spanned::Spanned};
 
