@@ -58,25 +58,3 @@ pub fn warn(_: TokenStream) -> TokenStream {
 pub fn helpful_warning(_: TokenStream) -> TokenStream {
     proc_macro::TokenStream::from(zst("helpful_warning"))
 }
-#[proc_macro_derive(warn_multispan)]
-pub fn warn_multispan(input: TokenStream) -> TokenStream {
-    warn_multispan::impl_(input.into()).into()
-}
-
-mod warn_multispan {
-    use proc_macro2::{Span, TokenStream};
-    use proc_macro2_diagnostic::{DiagnosticResult, DiagnosticStream};
-    use syn::{DeriveInput, spanned::Spanned};
-
-    pub(super) fn impl_(input: TokenStream) -> DiagnosticStream {
-        let ast: DeriveInput = syn::parse2(input).expect("derive macro");
-        let attributes = &ast.attrs;
-        let ident = &ast.ident;
-        DiagnosticResult::warn_spanned(
-            TokenStream::new(),
-            ident.span(),
-            format_args!("{} attributes counted", attributes.len()),
-        )
-        .add_span(attributes.iter().next().unwrap().span())
-    }
-}
