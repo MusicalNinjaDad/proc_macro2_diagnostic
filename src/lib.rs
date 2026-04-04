@@ -72,7 +72,7 @@ impl<T> DiagnosticResult<T> {
     /// Create an `Err` result containing an `Error` diagnostic **spanning the macro call_site**
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
-    /// this means you can use format_args!() to avoid intermediate allocations
+    /// this means you can use format_args!() to avoid intermediate allocations.
     pub fn error<MSG: ToString>(message: MSG) -> Self {
         Self::Err(Diagnostic {
             level: Level::Error,
@@ -86,7 +86,7 @@ impl<T> DiagnosticResult<T> {
     /// _and_ a valid value.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
-    /// this means you can use format_args!() to avoid intermediate allocations
+    /// this means you can use format_args!() to avoid intermediate allocations.
     ///
     /// A note will be added to the warning when emitted, which highlights the original call site.
     pub fn warn_spanned<MSG: ToString, SPN: MultiSpan>(value: T, span: SPN, message: MSG) -> Self {
@@ -104,7 +104,7 @@ impl<T> DiagnosticResult<T> {
     /// Add a `Help` message to an existing result at one or more spans.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
-    /// this means you can use format_args!() to avoid intermediate allocations
+    /// this means you can use format_args!() to avoid intermediate allocations.
     pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self {
             Ok(_) => todo!("Handle attempt to attach a help message to an OK value"),
@@ -122,7 +122,7 @@ impl<T> DiagnosticResult<T> {
 
     // TODO: #18 pub fn add_note()
 
-    /// Return the Ok result or panic
+    /// Return the Ok result or panic.
     pub fn unwrap(self) -> T
     where
         T: Debug,
@@ -155,7 +155,7 @@ impl<T> DiagnosticResult<T> {
 /// }
 /// ```
 /// which is a little ugly, but will simplify to either `T` or an unwrapped `DiagnosticResult<T>`
-/// on `?`
+/// on `?`.
 pub struct Diagnostic {
     level: Level,
     message: String,
@@ -164,7 +164,7 @@ pub struct Diagnostic {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-/// 1:1 match for [proc_macro::Level]
+/// 1:1 match for [proc_macro::Level].
 enum Level {
     Error,
     Warning,
@@ -260,7 +260,7 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
 
 /// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] and/or convert
 /// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty
-/// [proc_macro::TokenStream] in case of [DiagnosticResult::Err]
+/// [proc_macro::TokenStream] in case of [DiagnosticResult::Err].
 impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
         match result {
@@ -278,7 +278,7 @@ impl From<DiagnosticStream> for TokenStream1 {
 }
 
 impl Diagnostic {
-    /// Convert to a [proc_macro::Diagnostic] and then emit
+    /// Convert to a [proc_macro::Diagnostic] and then emit.
     fn emit(mut self) {
         if matches!(self.level, Level::Warning) {
             let source_note = Diagnostic {
@@ -299,7 +299,7 @@ impl Diagnostic {
     }
 }
 
-/// Supporting functions for the conversion to the proc_macro world
+/// Supporting functions for the conversion to the proc_macro world.
 impl Diagnostic {
     /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
     /// Consumes both and returns a new [proc_macro::Diagnostic].
@@ -313,7 +313,7 @@ impl Diagnostic {
         }
     }
 
-    /// Get and convert the spans to use in a new [proc_macro::Diagnostic]
+    /// Get and convert the spans to use in a new [proc_macro::Diagnostic].
     fn as_spans(&self) -> Vec<proc_macro::Span> {
         self.spans.iter().map(|span| span.unwrap()).collect()
     }
