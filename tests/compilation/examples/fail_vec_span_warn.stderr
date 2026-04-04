@@ -1,0 +1,13 @@
+error: failed
+ --> tests/compilation/examples/fail_vec_span_warn.rs:3:1
+  |
+3 | #[error]
+  | ^^^^^^^^
+  |
+  = note: this error originates in the attribute macro `error` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: warning with multiple spans
+  --> tests/compilation/examples/fail_vec_span_warn.rs:10:16
+   |
+10 | vec_span_warn!(foo bar baz);
+   |                ^^^ ^^^ ^^^

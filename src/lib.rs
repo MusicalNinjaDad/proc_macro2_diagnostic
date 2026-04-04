@@ -23,7 +23,7 @@
 //!
 //! ```
 
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 extern crate proc_macro;
 
@@ -61,9 +61,9 @@ pub enum DiagnosticResult<T> {
 impl<T> DiagnosticResult<T> {
     /// Create an `Err` result containing an `Error` diagnostic **spanning the macro call_site**
     ///
-    /// The message can be anything that implements `Display` - this means you can use
-    /// format_args!() to avoid intermediate allocations
-    pub fn error<S: Display>(message: S) -> Self {
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations
+    pub fn error<MSG: ToString>(message: MSG) -> Self {
         Self::Err(Diagnostic {
             level: Level::Error,
             message: message.to_string(),
@@ -72,35 +72,35 @@ impl<T> DiagnosticResult<T> {
         })
     }
 
-    /// Create a `Warning` result containing a `Warning` diagnostic at a given span _and_ a valid
-    /// value
+    /// Create a `Warning` result containing a `Warning` diagnostic at one or more spans
+    /// _and_ a valid value.
     ///
-    /// The message can be anything that implements `Display` - this means you can use
-    /// format_args!() to avoid intermediate allocations
-    pub fn warn_spanned<S: Display>(value: T, span: Span, message: S) -> Self {
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations
+    pub fn warn_spanned<MSG: ToString, SPN: MultiSpan>(value: T, span: SPN, message: MSG) -> Self {
         Self::Warning(
             value,
             Diagnostic {
                 level: Level::Warning,
                 message: message.to_string(),
-                spans: vec![span],
+                spans: span.into_spans(),
                 children: vec![],
             },
         )
     }
 
-    /// Add a `Help` message to an existing result, at a given span.
+    /// Add a `Help` message to an existing result at one or more spans.
     ///
-    /// The message can be anything that implements `Display` - this means you can use
-    /// format_args!() to avoid intermediate allocations
-    pub fn add_help<S: Display>(mut self, span: Span, message: S) -> Self {
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations
+    pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self {
             Ok(_) => todo!("Handle attempt to attach a help message to an OK value"),
             DiagnosticResult::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
                 diagnostic.children.push(Diagnostic {
                     level: Level::Help,
                     message: message.to_string(),
-                    spans: vec![span],
+                    spans: span.into_spans(),
                     children: vec![],
                 });
                 self
@@ -167,6 +167,33 @@ impl From<Level> for proc_macro::Level {
             Level::Note => Self::Note,
             Level::Warning => Self::Warning,
         }
+    }
+}
+
+/// A helper trait for APIs that accept one or more `Span`s.
+///
+/// This mirrors the behavior of [proc_macro::diagnostic::MultiSpan] and allows
+/// callers to pass a `Span`, `Vec<Span>`, or `&[Span]` to supported APIs.
+pub trait MultiSpan {
+    /// Consume `self` and convert into an owned `Vec<Span>`.
+    fn into_spans(self) -> Vec<Span>;
+}
+
+impl MultiSpan for Span {
+    fn into_spans(self) -> Vec<Span> {
+        vec![self]
+    }
+}
+
+impl MultiSpan for Vec<Span> {
+    fn into_spans(self) -> Vec<Span> {
+        self
+    }
+}
+
+impl MultiSpan for &[Span] {
+    fn into_spans(self) -> Vec<Span> {
+        self.to_vec()
     }
 }
 
