@@ -23,7 +23,7 @@
 //!
 //! ```
 
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 extern crate proc_macro;
 
@@ -63,7 +63,7 @@ impl<T> DiagnosticResult<T> {
     ///
     /// The message can be anything that implements `Display` - this means you can use
     /// format_args!() to avoid intermediate allocations
-    pub fn error<MSG: Display>(message: MSG) -> Self {
+    pub fn error<MSG: ToString>(message: MSG) -> Self {
         Self::Err(Diagnostic {
             level: Level::Error,
             message: message.to_string(),
@@ -77,7 +77,7 @@ impl<T> DiagnosticResult<T> {
     ///
     /// The message can be anything that implements `Display` - this means you can use
     /// format_args!() to avoid intermediate allocations.
-    pub fn warn_spanned<MSG: Display, SPN: MultiSpan>(value: T, span: SPN, message: MSG) -> Self {
+    pub fn warn_spanned<MSG: ToString, SPN: MultiSpan>(value: T, span: SPN, message: MSG) -> Self {
         Self::Warning(
             value,
             Diagnostic {
@@ -93,7 +93,7 @@ impl<T> DiagnosticResult<T> {
     ///
     /// The message can be anything that implements `Display` - this means you can use
     /// format_args!() to avoid intermediate allocations.
-    pub fn add_help<MSG: Display, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
+    pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self {
             Ok(_) => todo!("Handle attempt to attach a help message to an OK value"),
             DiagnosticResult::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
