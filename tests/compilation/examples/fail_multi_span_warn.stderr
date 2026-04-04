@@ -1,0 +1,8 @@
+// Expected stderr output for multi span warning
+// This will be updated once the MultiSpan trait is implemented
+// Example expected output:
+// warning: warning with multiple spans
+//   --> $DIR/fail_multi_span_warn.rs:4:22
+//    |
+// 4  |     multi_span_warn!(foo bar baz);
+//    |                      ^^^ ^^^ ^^^

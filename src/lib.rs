@@ -270,3 +270,36 @@ impl Diagnostic {
         self.spans.iter().map(|span| span.unwrap()).collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Unit tests for MultiSpan trait implementations
+    // These tests will validate that Span, Vec<Span>, and &[Span] correctly implement MultiSpan
+
+    #[test]
+    fn test_span_into_spans() {
+        let span = Span::call_site();
+        let spans: Vec<Span> = span.into_spans();
+        assert_eq!(spans, vec![span]);
+    }
+
+    #[test]
+    fn test_vec_span_into_spans() {
+        let span1 = Span::call_site();
+        let span2 = Span::call_site();
+        let vec_spans = vec![span1, span2];
+        let spans: Vec<Span> = vec_spans.into_spans();
+        assert_eq!(spans, vec![span1, span2]);
+    }
+
+    #[test]
+    fn test_slice_span_into_spans() {
+        let span1 = Span::call_site();
+        let span2 = Span::call_site();
+        let slice_spans = &[span1, span2];
+        let spans: Vec<Span> = slice_spans.into_spans();
+        assert_eq!(spans, vec![span1, span2]);
+    }
+}
