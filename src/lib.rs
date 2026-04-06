@@ -1,3 +1,4 @@
+#![feature(import_trait_associated_functions)]
 #![feature(never_type)]
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
@@ -48,6 +49,7 @@ use crate::DiagnosticResult::{Err, Ok};
 pub mod prelude {
     pub use super::DiagnosticStream;
     pub use super::DiagnosticResult::{self, Ok};
+    pub use super::DR::foo;
 }
 
 /// A convenience type which is designed to be returned from a proc_macro2-based macro
@@ -72,6 +74,21 @@ pub enum DiagnosticResult<T> {
     Ok(T),
     Warning(T, Diagnostic),
     Err(Diagnostic),
+}
+
+trait Seal {}
+
+#[expect(private_bounds)]
+pub trait DR: Seal {
+    fn foo() -> Self;
+}
+
+impl Seal for DiagnosticStream {}
+
+impl DR for DiagnosticStream {
+    fn foo() -> Self {
+        todo!()
+    }
 }
 
 impl<T> DiagnosticResult<T> {
@@ -322,5 +339,15 @@ impl Diagnostic {
     /// Get and convert the spans to use in a new [proc_macro::Diagnostic].
     fn as_spans(&self) -> Vec<proc_macro::Span> {
         self.spans.iter().map(|span| span.unwrap()).collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::prelude::*;
+
+    #[test]
+    fn can_foo() {
+        let _: DiagnosticStream = foo();
     }
 }
