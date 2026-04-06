@@ -188,15 +188,15 @@ impl<T> DiagnosticResult<T> {
     // TODO: #18 pub fn add_note()
 
     pub fn is_ok(&self) -> bool {
-        matches!(&self.inner, &DiagnosticResult_::Ok_(_))
+        matches!(&self.inner, &Ok_(_))
     }
 
     pub fn is_warning(&self) -> bool {
-        matches!(&self.inner, &DiagnosticResult_::Warning(_, _))
+        matches!(&self.inner, &Warning(_, _))
     }
 
     pub fn is_error(&self) -> bool {
-        matches!(&self.inner, &DiagnosticResult_::Err(_))
+        matches!(&self.inner, &Err(_))
     }
 
     /// The type of top-level message
