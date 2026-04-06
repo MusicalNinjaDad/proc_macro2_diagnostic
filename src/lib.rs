@@ -170,7 +170,11 @@ impl<T> DiagnosticResult<T> {
     }
 
     pub fn is_warning(self) -> bool {
-        matches!(self.inner, Warning(_,_))
+        matches!(self.inner, Warning(_, _))
+    }
+
+    pub fn is_error(self) -> bool {
+        matches!(self.inner, Err(_))
     }
 
     /// Return the Ok result or panic.
@@ -375,6 +379,11 @@ mod tests {
 
     #[test]
     fn is_warning() {
-        assert!(warn_spanned((), Span::call_site(),"foo").is_warning());
+        assert!(warn_spanned((), Span::call_site(), "foo").is_warning());
+    }
+
+    #[test]
+    fn is_error() {
+        assert!(error::<(), &str>("foo").is_error());
     }
 }
