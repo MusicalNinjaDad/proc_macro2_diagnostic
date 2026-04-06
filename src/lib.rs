@@ -1,3 +1,4 @@
+#![allow(stable_features, reason="MSRV for pinned nightly / BOOTSTRAP users")]
 #![feature(assert_matches)]
 #![feature(never_type)]
 #![feature(proc_macro_diagnostic)]
