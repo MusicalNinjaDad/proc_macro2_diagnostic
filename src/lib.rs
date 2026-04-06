@@ -284,6 +284,7 @@ mod internal {
             let is_call_site = |span: &&Span| {
                 span.local_file() == cs_file && span.start() == cs_start && span.end() == cs_end
             };
+            
             self.spans.iter().find(is_call_site).is_some()
                 || self
                     .children
