@@ -119,9 +119,7 @@ enum DiagnosticResult_<T> {
 /// Create an `Ok` result.
 #[expect(non_snake_case, reason = "same feel as a Result type alias")]
 pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
-    DiagnosticResult {
-        inner: Ok_(val),
-    }
+    DiagnosticResult { inner: Ok_(val) }
 }
 
 /// Create an `Err` result containing an `Error` diagnostic **spanning the macro call_site**
