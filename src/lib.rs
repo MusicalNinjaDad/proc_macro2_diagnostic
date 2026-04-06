@@ -275,9 +275,27 @@ mod internal {
             })
         }
 
+        /// Does any message _exactly_ span the call_site (not just across it)?
+        fn spans_call_site(&self) -> bool {
+            let call_site = Span::call_site();
+            let cs_start = call_site.start();
+            let cs_end = call_site.end();
+            for span in &self.spans {
+                if span.start() == cs_start && span.end() == cs_end {
+                    return true;
+                }
+            }
+            for child in &self.children {
+                if child.spans_call_site() {
+                    return true;
+                }
+            }
+            false
+        }
+
         /// Convert to a [proc_macro::Diagnostic] and then emit.
         pub fn emit(mut self) {
-            if matches!(self.level, Level::Warning) {
+            if !self.spans_call_site() {
                 self.add_note(
                     Span::call_site(),
                     "this warning originates from the macro invocation here".to_string(),

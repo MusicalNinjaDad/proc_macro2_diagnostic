@@ -17,9 +17,4 @@ help: help with multiple spans
    |
 10 | span_slice_help!(help1 help2);
    |                  ^^^^^ ^^^^^
-note: this warning originates from the macro invocation here
-  --> tests/compilation/examples/fail_span_slice_help.rs:10:1
-   |
-10 | span_slice_help!(help1 help2);
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    = note: this warning originates in the macro `span_slice_help` (in Nightly builds, run with -Z macro-backtrace for more info)
