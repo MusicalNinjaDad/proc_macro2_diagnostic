@@ -90,3 +90,9 @@ pub fn warn(_: TokenStream) -> TokenStream {
 pub fn helpful_warning(_: TokenStream) -> TokenStream {
     proc_macro::TokenStream::from(zst("helpful_warning"))
 }
+
+#[proc_macro]
+pub fn just_a_note(_: TokenStream) -> TokenStream {
+    let my_struct = zst("Bob").add_note(Span::call_site(), "this is Bob");
+    my_struct.into()
+}

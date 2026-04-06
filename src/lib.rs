@@ -1,3 +1,4 @@
+#![feature(assert_matches)]
 #![feature(never_type)]
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
@@ -12,7 +13,7 @@
 //! errors and handle them easily:
 //!
 //! - Top level diagnostics must be either an `Error` or a `Warning`
-//! - (Only) `Help` (& `Note`s -> still to do) can be added to a diagnostic
+//! - (Only) `Help` & `Note`s can be added to a diagnostic
 //! - `Error`s always span the original call site - add a Help or Note to add information related
 //!   to other spans
 //! - `Warning`s will always finish with a `Note` detailing the original call site
@@ -27,7 +28,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
 
-use crate::DiagnosticResult_::{Err, Ok as Ok_, Warning};
+use crate::DiagnosticResult_::{Fatal, NonFatal, Ok as Ok_};
 use crate::internal::*;
 
 /// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
@@ -112,16 +113,14 @@ pub enum DiagnosticResultKind {
 #[derive(Clone, Debug)]
 enum DiagnosticResult_<T> {
     Ok(T),
-    Warning(T, Diagnostic),
-    Err(Diagnostic),
+    NonFatal(T, Diagnostic),
+    Fatal(Diagnostic),
 }
 
 /// Create an `Ok` result.
 #[expect(non_snake_case, reason = "same feel as a Result type alias")]
 pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
-    DiagnosticResult {
-        inner: DiagnosticResult_::Ok(val),
-    }
+    DiagnosticResult { inner: Ok_(val) }
 }
 
 /// Create an `Err` result containing an `Error` diagnostic **spanning the macro call_site**
@@ -130,12 +129,7 @@ pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
 /// this means you can use format_args!() to avoid intermediate allocations.
 pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
     DiagnosticResult {
-        inner: Err(Diagnostic {
-            level: Level::Error,
-            message: message.to_string(),
-            spans: vec![Span::call_site()],
-            children: vec![],
-        }),
+        inner: Fatal(Diagnostic::new(Level::Error, Span::call_site(), message)),
     }
 }
 
@@ -152,15 +146,7 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     message: MSG,
 ) -> DiagnosticResult<T> {
     DiagnosticResult {
-        inner: Warning(
-            value,
-            Diagnostic {
-                level: Level::Warning,
-                message: message.to_string(),
-                spans: span.into_spans(),
-                children: vec![],
-            },
-        ),
+        inner: NonFatal(value, Diagnostic::new(Level::Warning, span, message)),
     }
 }
 
@@ -171,40 +157,55 @@ impl<T> DiagnosticResult<T> {
     /// this means you can use format_args!() to avoid intermediate allocations.
     pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self.inner {
-            // TODO: #24 Handle attempt to attach a help message to an OK value
-            Ok_(_) => todo!("Handle attempt to attach a help message to an OK value"),
-            DiagnosticResult_::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
-                diagnostic.children.push(Diagnostic {
-                    level: Level::Help,
-                    message: message.to_string(),
-                    spans: span.into_spans(),
-                    children: vec![],
-                });
+            Ok_(val) => Self {
+                inner: NonFatal(val, Diagnostic::new(Level::Help, span, message)),
+            },
+            NonFatal(_, ref mut diagnostic) | Fatal(ref mut diagnostic) => {
+                diagnostic.add_help(span, message);
                 self
             }
         }
     }
 
-    // TODO: #18 pub fn add_note()
+    /// Add a `Note` to an existing result at one or more spans.
+    ///
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations.
+    pub fn add_note<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
+        match self.inner {
+            Ok_(val) => Self {
+                inner: NonFatal(val, Diagnostic::new(Level::Note, span, message)),
+            },
+            NonFatal(_, ref mut diagnostic) | Fatal(ref mut diagnostic) => {
+                diagnostic.add_note(span, message);
+                self
+            }
+        }
+    }
 
     pub fn is_ok(&self) -> bool {
-        matches!(&self.inner, &Ok_(_))
+        matches!(&self.kind(), DiagnosticResultKind::Ok)
     }
 
     pub fn is_warning(&self) -> bool {
-        matches!(&self.inner, &Warning(_, _))
+        matches!(&self.kind(), DiagnosticResultKind::Warning)
     }
 
     pub fn is_error(&self) -> bool {
-        matches!(&self.inner, &Err(_))
+        matches!(&self.kind(), DiagnosticResultKind::Error)
     }
 
     /// The type of top-level message
     pub fn kind(&self) -> DiagnosticResultKind {
         match self.inner {
             DiagnosticResult_::Ok(_) => DiagnosticResultKind::Ok,
-            DiagnosticResult_::Warning(_, _) => DiagnosticResultKind::Warning,
-            DiagnosticResult_::Err(_) => DiagnosticResultKind::Error,
+            DiagnosticResult_::NonFatal(_, ref diagnostic) => match diagnostic.level {
+                Level::Warning => DiagnosticResultKind::Warning,
+                Level::Error => DiagnosticResultKind::Error,
+                Level::Note => DiagnosticResultKind::Ok,
+                Level::Help => DiagnosticResultKind::Ok,
+            },
+            DiagnosticResult_::Fatal(_) => DiagnosticResultKind::Error,
         }
     }
 
@@ -215,16 +216,18 @@ impl<T> DiagnosticResult<T> {
     {
         match self.inner {
             Ok_(t) => t,
-            Warning(val, warning) => panic!(
+            NonFatal(val, warning) => panic!(
                 "Called unwrap on value {:?} with accompanying warning: {:?}",
                 val, warning
             ),
-            Err(error) => panic!("Called unwrap on an error: {:?}", error),
+            Fatal(error) => panic!("Called unwrap on an error: {:?}", error),
         }
     }
 }
 
 mod internal {
+    use std::fmt::Display;
+
     use proc_macro2::Span;
 
     #[derive(Debug, Clone)]
@@ -248,23 +251,74 @@ mod internal {
         Help,
     }
 
+    impl Display for Level {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Level::Error => write!(f, "error"),
+                Level::Warning => write!(f, "warning"),
+                Level::Note => write!(f, "note"),
+                Level::Help => write!(f, "help"),
+            }
+        }
+    }
+
     impl Diagnostic {
+        pub fn new<MSG: ToString, SPN: MultiSpan>(level: Level, span: SPN, message: MSG) -> Self {
+            Self {
+                level,
+                message: message.to_string(),
+                spans: span.into_spans(),
+                children: vec![],
+            }
+        }
+
+        pub fn add_child<MSG: ToString, SPN: MultiSpan>(
+            &mut self,
+            level: Level,
+            span: SPN,
+            message: MSG,
+        ) {
+            self.children.push(Diagnostic::new(level, span, message));
+        }
+
+        pub fn add_help<MSG: ToString, SPN: MultiSpan>(&mut self, span: SPN, message: MSG) {
+            self.add_child(Level::Help, span, message);
+        }
+
+        pub fn add_note<MSG: ToString, SPN: MultiSpan>(&mut self, span: SPN, message: MSG) {
+            self.add_child(Level::Note, span, message);
+        }
+
+        /// Does any message _exactly_ span the call_site (not just across it)?
+        fn spans_call_site(&self) -> bool {
+            let call_site = Span::call_site();
+            let cs_file = call_site.local_file();
+            let cs_start = call_site.start();
+            let cs_end = call_site.end();
+            let is_call_site = |span: &Span| {
+                span.local_file() == cs_file && span.start() == cs_start && span.end() == cs_end
+            };
+
+            self.spans.iter().any(is_call_site)
+                || self.children.iter().any(Diagnostic::spans_call_site)
+        }
+
         /// Convert to a [proc_macro::Diagnostic] and then emit.
         pub fn emit(mut self) {
-            if matches!(self.level, Level::Warning) {
-                let source_note = Diagnostic {
-                    level: Level::Note,
-                    message: "this warning originates from the macro invocation here".to_string(),
-                    spans: vec![Span::call_site()],
-                    children: vec![],
-                };
-                self.children.push(source_note);
-            }
+            if !self.spans_call_site() {
+                self.add_note(
+                    Span::call_site(),
+                    format!(
+                        "this {} originates from the macro invocation here",
+                        self.level
+                    ),
+                );
+            };
             let spans = self.as_spans();
             let mut pm_diagnostic =
                 proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
             for child in self.children {
-                pm_diagnostic = child.add_as_child(pm_diagnostic);
+                pm_diagnostic = child.add_to_parent(pm_diagnostic);
             }
             pm_diagnostic.emit();
         }
@@ -274,7 +328,7 @@ mod internal {
     impl Diagnostic {
         /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
         /// Consumes both and returns a new [proc_macro::Diagnostic].
-        fn add_as_child(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
+        fn add_to_parent(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
             let msg = self.message.clone();
             match self.level {
                 Level::Error => parent.span_error(self.as_spans(), msg),
@@ -347,11 +401,11 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
         match self.inner {
             // BUG RISK?? Removal of Self - confusion between <T> and <!>??
             Ok_(t) => std::ops::ControlFlow::Continue(t),
-            Warning(t, d) => {
+            NonFatal(t, d) => {
                 d.emit();
                 std::ops::ControlFlow::Continue(t)
             }
-            Err(d) => std::ops::ControlFlow::Break(DiagnosticResult { inner: Err(d) }),
+            Fatal(d) => std::ops::ControlFlow::Break(DiagnosticResult { inner: Fatal(d) }),
         }
     }
 }
@@ -359,8 +413,8 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
 impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     fn from_residual(residual: DiagnosticResult<!>) -> Self {
         match residual.inner {
-            Err(residual) => Self {
-                inner: Err(residual),
+            Fatal(residual) => Self {
+                inner: Fatal(residual),
             },
         }
     }
@@ -387,11 +441,11 @@ impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
         match result.inner {
             Ok_(t) => t.into(),
-            Warning(t, warning) => {
+            NonFatal(t, warning) => {
                 warning.emit();
                 t.into()
             }
-            Err(error) => {
+            Fatal(error) => {
                 error.emit();
                 TokenStream1::new()
             }
@@ -401,6 +455,8 @@ impl From<DiagnosticStream> for TokenStream1 {
 
 #[cfg(test)]
 mod tests {
+    use std::assert_matches::assert_matches;
+
     use super::*;
 
     #[test]
@@ -425,5 +481,13 @@ mod tests {
             DiagnosticResultKind::Warning => panic!("not a warning"),
             DiagnosticResultKind::Error => panic!("not an error"),
         }
+    }
+
+    #[test]
+    fn ok_with_help() {
+        assert_matches!(
+            Ok(()).add_help(Span::call_site(), "help text").kind(),
+            DiagnosticResultKind::Ok
+        )
     }
 }
