@@ -169,6 +169,10 @@ impl<T> DiagnosticResult<T> {
         matches!(self.inner, Ok_(_))
     }
 
+    pub fn is_warning(self) -> bool {
+        matches!(self.inner, Warning(_,_))
+    }
+
     /// Return the Ok result or panic.
     pub fn unwrap(self) -> T
     where
@@ -367,5 +371,10 @@ mod tests {
     #[test]
     fn is_ok() {
         assert!(Ok(()).is_ok());
+    }
+
+    #[test]
+    fn is_warning() {
+        assert!(warn_spanned((), Span::call_site(),"foo").is_warning());
     }
 }
