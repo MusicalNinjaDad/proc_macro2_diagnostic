@@ -278,10 +278,12 @@ mod internal {
         /// Does any message _exactly_ span the call_site (not just across it)?
         fn spans_call_site(&self) -> bool {
             let call_site = Span::call_site();
+            let cs_file = call_site.local_file();
             let cs_start = call_site.start();
             let cs_end = call_site.end();
             for span in &self.spans {
-                if span.start() == cs_start && span.end() == cs_end {
+                if span.local_file() == cs_file && span.start() == cs_start && span.end() == cs_end
+                {
                     return true;
                 }
             }
