@@ -11,7 +11,7 @@ This crate is deliberately opinionated and focuses on making it easy to create g
 - `Error`s always span the original call site - add a Help or Note to add information related to other spans
 - `Warning`s will always finish with a `Note` detailing the original call site
 - Multi-level nesting is not possible
-- We do not provide a implementation of the full `proc_macro::Diagnostic` API. Other crates   attempt to do this, if that is what you are after.
+- We do not provide an implementation of the full `proc_macro::Diagnostic` API. Other crates attempt to do this, if that is what you are after.
 
 ## Alternatives
 
