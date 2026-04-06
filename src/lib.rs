@@ -80,6 +80,7 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// impl TryFrom<LitInt> for Even {
 ///     type Error = DiagnosticResult<Even>;
 ///     fn try_from(num: LitInt) -> Result<Even, DiagnosticResult<Even>> {
+///         // TODO: #17 allow direct ? from syn::Error
 ///         let num: i32 = num.base10_parse().unwrap();
 ///         if num % 2 == 0 {
 ///             std::result::Result::Ok(Even(num))
