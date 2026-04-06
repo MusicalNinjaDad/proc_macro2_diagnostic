@@ -88,7 +88,7 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 ///     let even = Even::try_from(num)?;
 ///     Ok(even)
 /// }
-/// 
+///
 /// assert!(is_even(parse_quote!(1)).is_error());
 /// assert!(is_even(parse_quote!(2)).is_ok());
 /// ```
