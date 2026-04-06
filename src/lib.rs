@@ -130,12 +130,7 @@ pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
 /// this means you can use format_args!() to avoid intermediate allocations.
 pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
     DiagnosticResult {
-        inner: Err(Diagnostic {
-            level: Level::Error,
-            message: message.to_string(),
-            spans: vec![Span::call_site()],
-            children: vec![],
-        }),
+        inner: Err(Diagnostic::new(Level::Error, Span::call_site(), message)),
     }
 }
 
@@ -152,15 +147,7 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     message: MSG,
 ) -> DiagnosticResult<T> {
     DiagnosticResult {
-        inner: Warning(
-            value,
-            Diagnostic {
-                level: Level::Warning,
-                message: message.to_string(),
-                spans: span.into_spans(),
-                children: vec![],
-            },
-        ),
+        inner: Warning(value, Diagnostic::new(Level::Warning, span, message)),
     }
 }
 
