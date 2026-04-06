@@ -44,6 +44,7 @@ use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
 
 use crate::DiagnosticResult::{Err, Ok, Warning};
+use crate::internal::*;
 
 /// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
 pub mod prelude {
@@ -67,6 +68,19 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// ### Usage
 /// It is deliberately not possible to directly create an `Err` etc., prefer usage of `error()`,
 /// `warn_spanned()` which ensure all invariants are maintained.
+///
+/// ### Implementing [std::convert::TryFrom]
+/// As it is not possible to directly create a `Diagnostic`, use
+/// ```ignore code-snippet
+/// impl TryFrom ... {
+///     type Error = DiagnosticResult<T>
+///     fn try_from ... -> Result<T, DiagnosticResult<T>> {
+///         ...
+///     }
+/// }
+/// ```
+/// which is a little ugly, but will simplify to either `T` or an unwrapped `DiagnosticResult<T>`
+/// on `?`.
 ///
 /// ### Future changes
 /// - TODO: #11 Provide complete Result API
@@ -150,75 +164,108 @@ impl<T> DiagnosticResult<T> {
     }
 }
 
-#[derive(Debug, Clone)]
-/// The internal Diagnostic stored within DiagnosticResult.
-/// Not (currently) designed for direct usage.
-///
-/// 1:1 structure to match [proc_macro::Diagnostic]
-///
-/// ### Implementing [std::convert::TryFrom]
-/// As it is not possible to directly create a `Diagnostic`, use
-/// ```ignore code-snippet
-/// impl TryFrom ... {
-///     type Error = DiagnosticResult<T>
-///     fn try_from ... -> Result<T, DiagnosticResult<T>> {
-///         ...
-///     }
-/// }
-/// ```
-/// which is a little ugly, but will simplify to either `T` or an unwrapped `DiagnosticResult<T>`
-/// on `?`.
-pub struct Diagnostic {
-    level: Level,
-    message: String,
-    spans: Vec<Span>,
-    children: Vec<Diagnostic>,
-}
+mod internal {
+    use proc_macro2::Span;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-/// 1:1 match for [proc_macro::Level].
-enum Level {
-    Error,
-    Warning,
-    Note,
-    Help,
-}
+    #[derive(Debug, Clone)]
+    /// The internal Diagnostic stored within DiagnosticResult.
+    /// Not (currently) designed for direct usage.
+    ///
+    /// 1:1 structure to match [proc_macro::Diagnostic]
+    pub struct Diagnostic {
+        pub level: Level,
+        pub message: String,
+        pub spans: Vec<Span>,
+        pub children: Vec<Diagnostic>,
+    }
 
-impl From<Level> for proc_macro::Level {
-    fn from(level: Level) -> Self {
-        match level {
-            Level::Error => Self::Error,
-            Level::Help => Self::Help,
-            Level::Note => Self::Note,
-            Level::Warning => Self::Warning,
+    #[derive(Debug, Clone, Copy, PartialEq)]
+    /// 1:1 match for [proc_macro::Level].
+    pub enum Level {
+        Error,
+        Warning,
+        Note,
+        Help,
+    }
+
+    impl Diagnostic {
+        /// Convert to a [proc_macro::Diagnostic] and then emit.
+        pub fn emit(mut self) {
+            if matches!(self.level, Level::Warning) {
+                let source_note = Diagnostic {
+                    level: Level::Note,
+                    message: "this warning originates from the macro invocation here".to_string(),
+                    spans: vec![Span::call_site()],
+                    children: vec![],
+                };
+                self.children.push(source_note);
+            }
+            let spans = self.as_spans();
+            let mut pm_diagnostic =
+                proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
+            for child in self.children {
+                pm_diagnostic = child.add_as_child(pm_diagnostic);
+            }
+            pm_diagnostic.emit();
         }
     }
-}
 
-/// A helper trait for APIs that accept one or more `Span`s.
-///
-/// This mirrors the behavior of [proc_macro::diagnostic::MultiSpan] and allows
-/// callers to pass a `Span`, `Vec<Span>`, or `&[Span]` to supported APIs.
-pub trait MultiSpan {
-    /// Consume `self` and convert into an owned `Vec<Span>`.
-    fn into_spans(self) -> Vec<Span>;
-}
+    /// Supporting functions for the conversion to the proc_macro world.
+    impl Diagnostic {
+        /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
+        /// Consumes both and returns a new [proc_macro::Diagnostic].
+        fn add_as_child(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
+            let msg = self.message.clone();
+            match self.level {
+                Level::Error => parent.span_error(self.as_spans(), msg),
+                Level::Warning => parent.span_warning(self.as_spans(), msg),
+                Level::Note => parent.span_note(self.as_spans(), msg),
+                Level::Help => parent.span_help(self.as_spans(), msg),
+            }
+        }
 
-impl MultiSpan for Span {
-    fn into_spans(self) -> Vec<Span> {
-        vec![self]
+        /// Get and convert the spans to use in a new [proc_macro::Diagnostic].
+        fn as_spans(&self) -> Vec<proc_macro::Span> {
+            self.spans.iter().map(|span| span.unwrap()).collect()
+        }
     }
-}
 
-impl MultiSpan for Vec<Span> {
-    fn into_spans(self) -> Vec<Span> {
-        self
+    impl From<Level> for proc_macro::Level {
+        fn from(level: Level) -> Self {
+            match level {
+                Level::Error => Self::Error,
+                Level::Help => Self::Help,
+                Level::Note => Self::Note,
+                Level::Warning => Self::Warning,
+            }
+        }
     }
-}
 
-impl MultiSpan for &[Span] {
-    fn into_spans(self) -> Vec<Span> {
-        self.to_vec()
+    /// A helper trait for APIs that accept one or more `Span`s.
+    ///
+    /// This mirrors the behavior of [proc_macro::diagnostic::MultiSpan] and allows
+    /// callers to pass a `Span`, `Vec<Span>`, or `&[Span]` to supported APIs.
+    pub trait MultiSpan {
+        /// Consume `self` and convert into an owned `Vec<Span>`.
+        fn into_spans(self) -> Vec<Span>;
+    }
+
+    impl MultiSpan for Span {
+        fn into_spans(self) -> Vec<Span> {
+            vec![self]
+        }
+    }
+
+    impl MultiSpan for Vec<Span> {
+        fn into_spans(self) -> Vec<Span> {
+            self
+        }
+    }
+
+    impl MultiSpan for &[Span] {
+        fn into_spans(self) -> Vec<Span> {
+            self.to_vec()
+        }
     }
 }
 
@@ -286,47 +333,5 @@ impl From<DiagnosticStream> for TokenStream1 {
                 TokenStream1::new()
             }
         }
-    }
-}
-
-impl Diagnostic {
-    /// Convert to a [proc_macro::Diagnostic] and then emit.
-    fn emit(mut self) {
-        if matches!(self.level, Level::Warning) {
-            let source_note = Diagnostic {
-                level: Level::Note,
-                message: "this warning originates from the macro invocation here".to_string(),
-                spans: vec![Span::call_site()],
-                children: vec![],
-            };
-            self.children.push(source_note);
-        }
-        let spans = self.as_spans();
-        let mut pm_diagnostic =
-            proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
-        for child in self.children {
-            pm_diagnostic = child.add_as_child(pm_diagnostic);
-        }
-        pm_diagnostic.emit();
-    }
-}
-
-/// Supporting functions for the conversion to the proc_macro world.
-impl Diagnostic {
-    /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
-    /// Consumes both and returns a new [proc_macro::Diagnostic].
-    fn add_as_child(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
-        let msg = self.message.clone();
-        match self.level {
-            Level::Error => parent.span_error(self.as_spans(), msg),
-            Level::Warning => parent.span_warning(self.as_spans(), msg),
-            Level::Note => parent.span_note(self.as_spans(), msg),
-            Level::Help => parent.span_help(self.as_spans(), msg),
-        }
-    }
-
-    /// Get and convert the spans to use in a new [proc_macro::Diagnostic].
-    fn as_spans(&self) -> Vec<proc_macro::Span> {
-        self.spans.iter().map(|span| span.unwrap()).collect()
     }
 }
