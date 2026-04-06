@@ -44,6 +44,12 @@ use proc_macro2::Span;
 
 use crate::DiagnosticResult::{Err, Ok};
 
+/// Prelude for easy * imports `use proc_macro2_diagnostic::prelude::*`
+pub mod prelude {
+    pub use super::DiagnosticStream;
+    pub use super::DiagnosticResult::{self, Ok};
+}
+
 /// A convenience type which is designed to be returned from a proc_macro2-based macro
 /// implementation.
 /// Call `into`/`from`, not `?`, on this to return and convert the contained TokenStream
