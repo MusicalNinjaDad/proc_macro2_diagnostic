@@ -4,7 +4,7 @@ Provides a DiagnosticResult which makes it easy to implement multi-level compile
 
 ## Note
 
-This crate is deliberately opinionated and focusses on making it easy to create good compiler errors and handle them easily:
+This crate is deliberately opinionated and focuses on making it easy to create good compiler errors and handle them easily:
 
 - Top level diagnostics must be either an `Error` or a `Warning`
 - (Only) `Help` (& `Note`s -> still to do) can be added to a diagnostic
