@@ -2,38 +2,23 @@
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
 
-//! Provides a DiagnosticResult which stores a Diagnostic based upon the API of
-//! [proc_macro::Diagnostic] and allows `?` usage to return early from proc_macro2 code.
+//! Provides a DiagnosticResult which makes it easy to implement multi-level compiler messages
+//! based upon the experimental [proc_macro::Diagnostic] and allows simple idiomatic error handling
+//! via `?` while ensuring errors & warnings are properly emitted by the compiler.
 //!
 //! ## Note
 //!
-//! This crate is a little opinionated in an attempt to make it simpler to create good compiler errors:
+//! This crate is deliberately opinionated and focusses on making it easy to create good compiler
+//! errors and handle them easily:
 //!
 //! - Top level diagnostics must be either an `Error` or a `Warning`
 //! - (Only) `Help` (& `Note`s -> still to do) can be added to a diagnostic
-//! - `Error`s always span the original call site - add a Help or Note to add information related to other spans
+//! - `Error`s always span the original call site - add a Help or Note to add information related
+//!   to other spans
 //! - `Warning`s will always finish with a `Note` detailing the original call site
 //! - Multi-level nesting is not possible
-//!
-//! ## Usage
-//!
-//! ```
-//! #![feature(never_type)]
-//! #![feature(try_trait_v2)]
-//!
-//! # extern crate proc_macro;
-//!
-//! use proc_macro2_diagnostic::prelude::*;
-//! use quote::quote;
-//!
-//! fn zst(name: &str) -> DiagnosticStream {
-//!     match name {
-//!         "fail" => error("failed")?,
-//!         _ => Ok(quote!{struct #name;}),
-//!     }
-//! }
-//!
-//! ```
+//! - We do not provide a implementation of the full [proc_macro::Diagnostic] API. Other crates
+//!   attempt to do this, if that is what you are after.
 
 use std::fmt::Debug;
 
@@ -54,18 +39,27 @@ pub mod prelude {
 
 /// A convenience type which is designed to be returned from a proc_macro2-based macro
 /// implementation.
-/// Call `into`/`from`, not `?`, on this to return and convert the contained TokenStream
-/// and/or emit the diagnostic messages.
+///
+/// ### Usage
+/// 1. Shorten your proc_macro to `my_proc_macro2_impl(input.into()).into()`
+/// 2. Return a DiagnosticStream from `my_proc_macro2_impl(input: proc_macro2::Tokenstream) -> DiagnosticStream`
+/// 3. Use `Ok()`, `error` or `warn_spanned` within the function; return a `DiagnosticResult<_>`
+///    from any supporting functions and handle it with `?`
+///
+/// All errors & warnings will be properly emitted by the compiler and nicely formatted.
 pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 
 #[derive(Clone, Debug)]
 #[must_use = "this `DiagnosticResult` may be an error or a warning, which should be emitted"]
-/// Result-like type which wraps any Ok-type and provides a `Diagnostic`-like API &
-/// functionality for non-OK cases.
+/// Result-like type which can represent a valid return value, an error or a warning accompanying
+/// a valid return value. Warnings will be emitted upon `?`, allowing your code to continue with
+/// the valid value. Errors will short-circuit upon `?` and be emitted upon final conversion to a
+/// [proc_macro::TokenStream]
 ///
 /// ### Usage
-/// It is deliberately not possible to directly create an `Err` etc., prefer usage of `error()`,
-/// `warn_spanned()` which ensure all invariants are maintained.
+/// 1. Create a DiagnosticResult via `Ok()`, `error` or `warn_spanned`.
+/// 2. Treat the DiagnosticResult as you would any other Result type and unpack it with `?` at a
+///    suitable point in your code.
 ///
 /// ### Implementing [std::convert::TryFrom]
 /// As it is not possible to directly create a pure Diagnostic, use `Result<T, DiagnosticResult<T>>`
@@ -74,6 +68,7 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// use proc_macro2_diagnostic::prelude::*;
 /// use syn::{parse_quote, LitInt};
 ///
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 /// struct Even(i32);
 ///
 /// impl TryFrom<LitInt> for Even {
@@ -93,7 +88,7 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 ///     let even = Even::try_from(num)?;
 ///     Ok(even)
 /// }
-///
+/// 
 /// assert!(is_even(parse_quote!(1)).is_error());
 /// assert!(is_even(parse_quote!(2)).is_ok());
 /// ```
@@ -107,7 +102,7 @@ pub struct DiagnosticResult<T> {
 }
 
 #[derive(Clone, Debug)]
-// Is this exhaustive? Or is there a valid argument to allow Help, Note as top level diagnostics?
+/// The type of top-level message contained in the DiagnosticResult
 pub enum DiagnosticResultKind {
     Ok,
     Warning,
@@ -204,6 +199,7 @@ impl<T> DiagnosticResult<T> {
         matches!(self.inner, Err(_))
     }
 
+    /// The type of top-level message
     pub fn kind(&self) -> DiagnosticResultKind {
         match self.inner {
             DiagnosticResult_::Ok(_) => DiagnosticResultKind::Ok,
