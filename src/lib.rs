@@ -174,12 +174,7 @@ impl<T> DiagnosticResult<T> {
             // TODO: #24 Handle attempt to attach a help message to an OK value
             Ok_(_) => todo!("Handle attempt to attach a help message to an OK value"),
             DiagnosticResult_::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
-                diagnostic.children.push(Diagnostic {
-                    level: Level::Help,
-                    message: message.to_string(),
-                    spans: span.into_spans(),
-                    children: vec![],
-                });
+                diagnostic.add_help(span, message);
                 self
             }
         }
@@ -262,6 +257,15 @@ mod internal {
     }
 
     impl Diagnostic {
+        pub fn add_help<MSG: ToString, SPN: MultiSpan>(&mut self, span: SPN, message: MSG) {
+            self.children.push(Diagnostic {
+                level: Level::Help,
+                message: message.to_string(),
+                spans: span.into_spans(),
+                children: vec![],
+            });
+        }
+
         pub fn add_note<MSG: ToString, SPN: MultiSpan>(&mut self, span: SPN, message: MSG) {
             self.children.push(Diagnostic {
                 level: Level::Note,
