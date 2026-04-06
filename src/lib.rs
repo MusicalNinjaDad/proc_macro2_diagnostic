@@ -88,6 +88,13 @@ pub struct DiagnosticResult<T> {
 }
 
 #[derive(Clone, Debug)]
+pub enum DiagnosticResultKind {
+    Ok,
+    Warning,
+    Error
+}
+
+#[derive(Clone, Debug)]
 enum DiagnosticResult_<T> {
     Ok(T),
     Warning(T, Diagnostic),
@@ -175,6 +182,14 @@ impl<T> DiagnosticResult<T> {
 
     pub fn is_error(self) -> bool {
         matches!(self.inner, Err(_))
+    }
+
+    pub fn kind(&self) -> DiagnosticResultKind {
+        match self.inner {
+            DiagnosticResult_::Ok(_) => DiagnosticResultKind::Ok,
+            DiagnosticResult_::Warning(_, _) => DiagnosticResultKind::Warning,
+            DiagnosticResult_::Err(_) => DiagnosticResultKind::Error,
+        }
     }
 
     /// Return the Ok result or panic.
@@ -385,5 +400,14 @@ mod tests {
     #[test]
     fn is_error() {
         assert!(error::<(), &str>("foo").is_error());
+    }
+
+    #[test]
+    fn kind() {
+        match Ok(()).kind() {
+            DiagnosticResultKind::Ok => (),
+            DiagnosticResultKind::Warning => panic!("not a warning"),
+            DiagnosticResultKind::Error => panic!("not an error"),
+        }
     }
 }
