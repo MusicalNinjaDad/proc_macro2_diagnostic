@@ -295,16 +295,12 @@ mod internal {
             let cs_file = call_site.local_file();
             let cs_start = call_site.start();
             let cs_end = call_site.end();
-            let is_call_site = |span: &&Span| {
+            let is_call_site = |span: &Span| {
                 span.local_file() == cs_file && span.start() == cs_start && span.end() == cs_end
             };
 
-            self.spans.iter().find(is_call_site).is_some()
-                || self
-                    .children
-                    .iter()
-                    .find(|child| child.spans_call_site())
-                    .is_some()
+            self.spans.iter().any(is_call_site)
+                || self.children.iter().any(Diagnostic::spans_call_site)
         }
 
         /// Convert to a [proc_macro::Diagnostic] and then emit.
