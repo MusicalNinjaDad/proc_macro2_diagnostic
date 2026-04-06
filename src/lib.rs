@@ -171,8 +171,9 @@ impl<T> DiagnosticResult<T> {
     /// this means you can use format_args!() to avoid intermediate allocations.
     pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self.inner {
-            // TODO: #24 Handle attempt to attach a help message to an OK value
-            Ok_(_) => todo!("Handle attempt to attach a help message to an OK value"),
+            Ok_(val) => Self {
+                inner: Warning(val, Diagnostic::new(Level::Help, span, message)),
+            },
             Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
                 diagnostic.add_help(span, message);
                 self
