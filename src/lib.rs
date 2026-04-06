@@ -173,7 +173,7 @@ impl<T> DiagnosticResult<T> {
         match self.inner {
             // TODO: #24 Handle attempt to attach a help message to an OK value
             Ok_(_) => todo!("Handle attempt to attach a help message to an OK value"),
-            DiagnosticResult_::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
+            Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
                 diagnostic.add_help(span, message);
                 self
             }
@@ -189,7 +189,7 @@ impl<T> DiagnosticResult<T> {
             Ok_(val) => Self {
                 inner: Warning(val, Diagnostic::new(Level::Note, span, message)),
             },
-            DiagnosticResult_::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
+            Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
                 diagnostic.add_note(span, message);
                 self
             }
