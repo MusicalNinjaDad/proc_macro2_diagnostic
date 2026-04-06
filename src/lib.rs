@@ -1,3 +1,4 @@
+#![feature(assert_matches)]
 #![feature(never_type)]
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
@@ -27,7 +28,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
 
-use crate::DiagnosticResult_::{Err, Ok as Ok_, Warning};
+use crate::DiagnosticResult_::{Fatal, NonFatal, Ok as Ok_};
 use crate::internal::*;
 
 /// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
@@ -112,8 +113,8 @@ pub enum DiagnosticResultKind {
 #[derive(Clone, Debug)]
 enum DiagnosticResult_<T> {
     Ok(T),
-    Warning(T, Diagnostic),
-    Err(Diagnostic),
+    NonFatal(T, Diagnostic),
+    Fatal(Diagnostic),
 }
 
 /// Create an `Ok` result.
@@ -128,7 +129,7 @@ pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
 /// this means you can use format_args!() to avoid intermediate allocations.
 pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
     DiagnosticResult {
-        inner: Err(Diagnostic::new(Level::Error, Span::call_site(), message)),
+        inner: Fatal(Diagnostic::new(Level::Error, Span::call_site(), message)),
     }
 }
 
@@ -145,7 +146,7 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     message: MSG,
 ) -> DiagnosticResult<T> {
     DiagnosticResult {
-        inner: Warning(value, Diagnostic::new(Level::Warning, span, message)),
+        inner: NonFatal(value, Diagnostic::new(Level::Warning, span, message)),
     }
 }
 
@@ -157,9 +158,9 @@ impl<T> DiagnosticResult<T> {
     pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self.inner {
             Ok_(val) => Self {
-                inner: Warning(val, Diagnostic::new(Level::Help, span, message)),
+                inner: NonFatal(val, Diagnostic::new(Level::Help, span, message)),
             },
-            Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
+            NonFatal(_, ref mut diagnostic) | Fatal(ref mut diagnostic) => {
                 diagnostic.add_help(span, message);
                 self
             }
@@ -173,9 +174,9 @@ impl<T> DiagnosticResult<T> {
     pub fn add_note<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self.inner {
             Ok_(val) => Self {
-                inner: Warning(val, Diagnostic::new(Level::Note, span, message)),
+                inner: NonFatal(val, Diagnostic::new(Level::Note, span, message)),
             },
-            Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
+            NonFatal(_, ref mut diagnostic) | Fatal(ref mut diagnostic) => {
                 diagnostic.add_note(span, message);
                 self
             }
@@ -183,23 +184,28 @@ impl<T> DiagnosticResult<T> {
     }
 
     pub fn is_ok(&self) -> bool {
-        matches!(&self.inner, &Ok_(_))
+        matches!(&self.kind(), DiagnosticResultKind::Ok)
     }
 
     pub fn is_warning(&self) -> bool {
-        matches!(&self.inner, &Warning(_, _))
+        matches!(&self.kind(), DiagnosticResultKind::Warning)
     }
 
     pub fn is_error(&self) -> bool {
-        matches!(&self.inner, &Err(_))
+        matches!(&self.kind(), DiagnosticResultKind::Error)
     }
 
     /// The type of top-level message
     pub fn kind(&self) -> DiagnosticResultKind {
         match self.inner {
             DiagnosticResult_::Ok(_) => DiagnosticResultKind::Ok,
-            DiagnosticResult_::Warning(_, _) => DiagnosticResultKind::Warning,
-            DiagnosticResult_::Err(_) => DiagnosticResultKind::Error,
+            DiagnosticResult_::NonFatal(_, ref diagnostic) => match diagnostic.level {
+                Level::Warning => DiagnosticResultKind::Warning,
+                Level::Error => DiagnosticResultKind::Error,
+                Level::Note => DiagnosticResultKind::Ok,
+                Level::Help => DiagnosticResultKind::Ok,
+            },
+            DiagnosticResult_::Fatal(_) => DiagnosticResultKind::Error,
         }
     }
 
@@ -210,11 +216,11 @@ impl<T> DiagnosticResult<T> {
     {
         match self.inner {
             Ok_(t) => t,
-            Warning(val, warning) => panic!(
+            NonFatal(val, warning) => panic!(
                 "Called unwrap on value {:?} with accompanying warning: {:?}",
                 val, warning
             ),
-            Err(error) => panic!("Called unwrap on an error: {:?}", error),
+            Fatal(error) => panic!("Called unwrap on an error: {:?}", error),
         }
     }
 }
@@ -399,11 +405,11 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
         match self.inner {
             // BUG RISK?? Removal of Self - confusion between <T> and <!>??
             Ok_(t) => std::ops::ControlFlow::Continue(t),
-            Warning(t, d) => {
+            NonFatal(t, d) => {
                 d.emit();
                 std::ops::ControlFlow::Continue(t)
             }
-            Err(d) => std::ops::ControlFlow::Break(DiagnosticResult { inner: Err(d) }),
+            Fatal(d) => std::ops::ControlFlow::Break(DiagnosticResult { inner: Fatal(d) }),
         }
     }
 }
@@ -411,8 +417,8 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
 impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     fn from_residual(residual: DiagnosticResult<!>) -> Self {
         match residual.inner {
-            Err(residual) => Self {
-                inner: Err(residual),
+            Fatal(residual) => Self {
+                inner: Fatal(residual),
             },
         }
     }
@@ -439,11 +445,11 @@ impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
         match result.inner {
             Ok_(t) => t.into(),
-            Warning(t, warning) => {
+            NonFatal(t, warning) => {
                 warning.emit();
                 t.into()
             }
-            Err(error) => {
+            Fatal(error) => {
                 error.emit();
                 TokenStream1::new()
             }
@@ -453,6 +459,8 @@ impl From<DiagnosticStream> for TokenStream1 {
 
 #[cfg(test)]
 mod tests {
+    use std::assert_matches::assert_matches;
+
     use super::*;
 
     #[test]
@@ -477,5 +485,13 @@ mod tests {
             DiagnosticResultKind::Warning => panic!("not a warning"),
             DiagnosticResultKind::Error => panic!("not an error"),
         }
+    }
+
+    #[test]
+    fn ok_with_help() {
+        assert_matches!(
+            Ok(()).add_help(Span::call_site(), "help text").kind(),
+            DiagnosticResultKind::Ok
+        )
     }
 }
