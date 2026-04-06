@@ -61,7 +61,6 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 
 #[derive(Clone, Debug)]
 #[must_use = "this `DiagnosticResult` may be an error or a warning, which should be emitted"]
-#[non_exhaustive]
 /// Result-like type which wraps any Ok-type and provides a `Diagnostic`-like API &
 /// functionality for non-OK cases.
 ///
@@ -95,6 +94,7 @@ enum DiagnosticResult_<T> {
     Err(Diagnostic),
 }
 
+/// Create an `Ok` result.
 #[expect(non_snake_case, reason = "same feel as a Result type alias")]
 pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
     DiagnosticResult {
@@ -164,6 +164,10 @@ impl<T> DiagnosticResult<T> {
     }
 
     // TODO: #18 pub fn add_note()
+
+    pub fn is_ok(self) -> bool {
+        matches!(self.inner, Ok_(_))
+    }
 
     /// Return the Ok result or panic.
     pub fn unwrap(self) -> T
@@ -353,5 +357,15 @@ impl From<DiagnosticStream> for TokenStream1 {
                 TokenStream1::new()
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_ok() {
+        assert!(Ok(()).is_ok());
     }
 }
