@@ -1,4 +1,3 @@
-#![feature(import_trait_associated_functions)]
 #![feature(never_type)]
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
