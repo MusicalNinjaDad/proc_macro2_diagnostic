@@ -45,7 +45,7 @@ use proc_macro2::Span;
 
 use crate::DiagnosticResult::{Err, Ok, Warning};
 
-/// Prelude for easy * imports `use proc_macro2_diagnostic::prelude::*`
+/// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
 pub mod prelude {
     pub use super::DiagnosticResult::{self, Ok};
     pub use super::DiagnosticStream;
@@ -89,7 +89,7 @@ pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
     })
 }
 
-/// Create a `Warning` result containing a `Warning` diagnostic at one or more spans
+/// Create a `Warning` result containing _both_ a `Warning` diagnostic at one or more spans
 /// _and_ a valid value.
 ///
 /// The message can be anything that implements `ToString` (incl. everything `Display`),
