@@ -194,12 +194,7 @@ impl<T> DiagnosticResult<T> {
             // TODO: #24 Handle attempt to attach a help message to an OK value
             Ok_(_) => todo!("Handle attempt to attach a note to an OK value"),
             DiagnosticResult_::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
-                diagnostic.children.push(Diagnostic {
-                    level: Level::Note,
-                    message: message.to_string(),
-                    spans: span.into_spans(),
-                    children: vec![],
-                });
+                diagnostic.add_note(span, message);
                 self
             }
         }
@@ -267,17 +262,23 @@ mod internal {
     }
 
     impl Diagnostic {
+        pub fn add_note<MSG: ToString, SPN: MultiSpan>(&mut self, span: SPN, message: MSG) {
+            self.children.push(Diagnostic {
+                level: Level::Note,
+                message: message.to_string(),
+                spans: span.into_spans(),
+                children: vec![],
+            })
+        }
+
         /// Convert to a [proc_macro::Diagnostic] and then emit.
         pub fn emit(mut self) {
             if matches!(self.level, Level::Warning) {
-                let source_note = Diagnostic {
-                    level: Level::Note,
-                    message: "this warning originates from the macro invocation here".to_string(),
-                    spans: vec![Span::call_site()],
-                    children: vec![],
-                };
-                self.children.push(source_note);
-            }
+                self.add_note(
+                    Span::call_site(),
+                    "this warning originates from the macro invocation here".to_string(),
+                );
+            };
             let spans = self.as_spans();
             let mut pm_diagnostic =
                 proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
