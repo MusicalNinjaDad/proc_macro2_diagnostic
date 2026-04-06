@@ -1,35 +1,19 @@
-# Diagnostic-based compiler errors for proc_macro2
+# Use `Diagnostic` compiler messages from proc_macro2 code with `Result`-like syntax
 
-Use `Diagnostic` compiler messages from proc_macro2 code with `Result`-like syntax.
-
-Provides a DiagnosticResult which stores a Diagnostic based upon the API of
-[proc_macro::Diagnostic] and allows `?` usage to return early from proc_macro2 code.
+Provides a DiagnosticResult which makes it easy to implement multi-level compiler messages
+based upon the experimental `proc_macro::Diagnostic` and allows simple idiomatic error handling
+via `?` while ensuring errors & warnings are properly emitted by the compiler.
 
 ## Note
 
-This crate is a little opinionated in an attempt to make it simpler to create good compiler errors:
+This crate is deliberately opinionated and focusses on making it easy to create good compiler
+errors and handle them easily:
 
-- Top-level diagnostics must be either an `Error` or a `Warning`
+- Top level diagnostics must be either an `Error` or a `Warning`
 - (Only) `Help` (& `Note`s -> still to do) can be added to a diagnostic
-- `Error`s always span the original call site - add a Help or Note to add information related to other spans
+- `Error`s always span the original call site - add a Help or Note to add information related
+  to other spans
 - `Warning`s will always finish with a `Note` detailing the original call site
 - Multi-level nesting is not possible
-
-## Usage
-
-```rust
-#![feature(never_type)]
-#![feature(try_trait_v2)]
-
-# extern crate proc_macro;
-
-use proc_macro2_diagnostic::{DiagnosticResult,DiagnosticStream};
-use quote::quote;
-
-fn zst(name: &str) -> DiagnosticStream {
-    match name {
-        "fail" => DiagnosticResult::error("failed")?,
-        _ => DiagnosticResult::Ok(quote!{struct #name;}),
-    }
-}
-```
+- We do not provide a implementation of the full proc_macro::Diagnostic API. Other crates
+  attempt to do this, if that is what you are after.
