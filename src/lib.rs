@@ -74,9 +74,9 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// #![feature(never_type)]
 /// use proc_macro2_diagnostic::prelude::*;
 /// use syn::{parse_quote, LitInt};
-/// 
+///
 /// struct Even(i32);
-/// 
+///
 /// impl TryFrom<LitInt> for Even {
 ///     type Error = DiagnosticResult<Even>;
 ///     fn try_from(num: LitInt) -> Result<Even, DiagnosticResult<Even>> {
@@ -88,12 +88,12 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 ///         }
 ///     }
 /// }
-/// 
+///
 /// fn is_even(num: LitInt) -> DiagnosticResult<Even> {
 ///     let even = Even::try_from(num)?;
 ///     Ok(even)
 /// }
-/// 
+///
 /// assert!(is_even(parse_quote!(1)).is_error());
 /// assert!(is_even(parse_quote!(2)).is_ok());
 /// ```
