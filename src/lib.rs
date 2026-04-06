@@ -185,7 +185,25 @@ impl<T> DiagnosticResult<T> {
         }
     }
 
-    // TODO: #18 pub fn add_note()
+    /// Add a `Note` to an existing result at one or more spans.
+    ///
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations.
+    pub fn add_note<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
+        match self.inner {
+            // TODO: #24 Handle attempt to attach a help message to an OK value
+            Ok_(_) => todo!("Handle attempt to attach a note to an OK value"),
+            DiagnosticResult_::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
+                diagnostic.children.push(Diagnostic {
+                    level: Level::Note,
+                    message: message.to_string(),
+                    spans: span.into_spans(),
+                    children: vec![],
+                });
+                self
+            }
+        }
+    }
 
     pub fn is_ok(&self) -> bool {
         matches!(&self.inner, &Ok_(_))
