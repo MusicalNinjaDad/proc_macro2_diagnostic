@@ -120,7 +120,7 @@ enum DiagnosticResult_<T> {
 #[expect(non_snake_case, reason = "same feel as a Result type alias")]
 pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
     DiagnosticResult {
-        inner: DiagnosticResult_::Ok(val),
+        inner: Ok_(val),
     }
 }
 
