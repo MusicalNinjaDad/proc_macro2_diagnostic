@@ -92,7 +92,7 @@ pub struct DiagnosticResult<T> {
 pub enum DiagnosticResultKind {
     Ok,
     Warning,
-    Error
+    Error,
 }
 
 #[derive(Clone, Debug)]
