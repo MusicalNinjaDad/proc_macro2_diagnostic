@@ -47,9 +47,10 @@ use crate::DiagnosticResult::{Err, Ok};
 
 /// Prelude for easy * imports `use proc_macro2_diagnostic::prelude::*`
 pub mod prelude {
-    pub use super::DiagnosticStream;
-    pub use super::DiagnosticResult::{self, Ok};
     pub use super::DR::foo;
+    pub use super::DiagnosticResult::{self, Ok};
+    pub use super::DiagnosticStream;
+    pub use super::DiagnosticResultExt::*;
 }
 
 /// A convenience type which is designed to be returned from a proc_macro2-based macro
@@ -76,14 +77,12 @@ pub enum DiagnosticResult<T> {
     Err(Diagnostic),
 }
 
-trait Seal {}
+trait Sealed {}
 
 #[expect(private_bounds)]
-pub trait DR: Seal {
+pub trait DR: Sealed {
     fn foo() -> Self;
 }
-
-impl Seal for DiagnosticStream {}
 
 impl DR for DiagnosticStream {
     fn foo() -> Self {
@@ -91,12 +90,31 @@ impl DR for DiagnosticStream {
     }
 }
 
-impl<T> DiagnosticResult<T> {
+#[deny(unfulfilled_lint_expectations)]
+#[expect(private_bounds)]
+/// Sealed trait to allow prelude to export these functions for direct use
+pub trait DiagnosticResultExt<T>: Sealed {
+    fn error<MSG: ToString>(message: MSG) -> Self;
+
+    fn warn_spanned<MSG: ToString, SPN: MultiSpan>(value: T, span: SPN, message: MSG) -> Self;
+
+    // explicit `mut` - is future_incompatible so monthly tests will show when we MUST change this
+    #[allow(patterns_in_fns_without_body)]
+    fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self;
+
+    fn unwrap(self) -> T
+    where
+        T: Debug;
+}
+
+impl<T> Sealed for DiagnosticResult<T> {}
+
+impl<T> DiagnosticResultExt<T> for DiagnosticResult<T> {
     /// Create an `Err` result containing an `Error` diagnostic **spanning the macro call_site**
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
-    pub fn error<MSG: ToString>(message: MSG) -> Self {
+    fn error<MSG: ToString>(message: MSG) -> Self {
         Self::Err(Diagnostic {
             level: Level::Error,
             message: message.to_string(),
@@ -112,7 +130,7 @@ impl<T> DiagnosticResult<T> {
     /// this means you can use format_args!() to avoid intermediate allocations.
     ///
     /// A note will be added to the warning when emitted, which highlights the original call site.
-    pub fn warn_spanned<MSG: ToString, SPN: MultiSpan>(value: T, span: SPN, message: MSG) -> Self {
+    fn warn_spanned<MSG: ToString, SPN: MultiSpan>(value: T, span: SPN, message: MSG) -> Self {
         Self::Warning(
             value,
             Diagnostic {
@@ -128,7 +146,7 @@ impl<T> DiagnosticResult<T> {
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
-    pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
+    fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self {
             Ok(_) => todo!("Handle attempt to attach a help message to an OK value"),
             DiagnosticResult::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
@@ -146,7 +164,7 @@ impl<T> DiagnosticResult<T> {
     // TODO: #18 pub fn add_note()
 
     /// Return the Ok result or panic.
-    pub fn unwrap(self) -> T
+    fn unwrap(self) -> T
     where
         T: Debug,
     {
