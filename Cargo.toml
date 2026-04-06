@@ -1,6 +1,6 @@
 [package]
 name = "proc_macro2_diagnostic"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 readme = "README.md"
 description = "Use `Diagnostic` compiler messages from proc_macro2 code with Result-like syntax."
