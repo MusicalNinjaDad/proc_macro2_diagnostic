@@ -266,22 +266,21 @@ mod internal {
             }
         }
 
+        pub fn add_child<MSG: ToString, SPN: MultiSpan>(
+            &mut self,
+            level: Level,
+            span: SPN,
+            message: MSG,
+        ) {
+            self.children.push(Diagnostic::new(level, span, message));
+        }
+
         pub fn add_help<MSG: ToString, SPN: MultiSpan>(&mut self, span: SPN, message: MSG) {
-            self.children.push(Diagnostic {
-                level: Level::Help,
-                message: message.to_string(),
-                spans: span.into_spans(),
-                children: vec![],
-            });
+            self.add_child(Level::Help, span, message);
         }
 
         pub fn add_note<MSG: ToString, SPN: MultiSpan>(&mut self, span: SPN, message: MSG) {
-            self.children.push(Diagnostic {
-                level: Level::Note,
-                message: message.to_string(),
-                spans: span.into_spans(),
-                children: vec![],
-            })
+            self.add_child(Level::Note, span, message);
         }
 
         /// Does any message _exactly_ span the call_site (not just across it)?
@@ -317,7 +316,7 @@ mod internal {
             let mut pm_diagnostic =
                 proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
             for child in self.children {
-                pm_diagnostic = child.add_as_child(pm_diagnostic);
+                pm_diagnostic = child.add_to_parent(pm_diagnostic);
             }
             pm_diagnostic.emit();
         }
@@ -327,7 +326,7 @@ mod internal {
     impl Diagnostic {
         /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
         /// Consumes both and returns a new [proc_macro::Diagnostic].
-        fn add_as_child(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
+        fn add_to_parent(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
             let msg = self.message.clone();
             match self.level {
                 Level::Error => parent.span_error(self.as_spans(), msg),
