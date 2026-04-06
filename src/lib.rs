@@ -88,6 +88,7 @@ pub struct DiagnosticResult<T> {
 }
 
 #[derive(Clone, Debug)]
+// Is this exhaustive? Or is there a valid argument to allow Help, Note as top level diagnostics?
 pub enum DiagnosticResultKind {
     Ok,
     Warning,
