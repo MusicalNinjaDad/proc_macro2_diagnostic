@@ -47,10 +47,9 @@ use crate::DiagnosticResult::{Err, Ok};
 
 /// Prelude for easy * imports `use proc_macro2_diagnostic::prelude::*`
 pub mod prelude {
-    pub use super::DR::foo;
     pub use super::DiagnosticResult::{self, Ok};
     pub use super::DiagnosticStream;
-    pub use super::DiagnosticResultExt::*;
+    pub use super::DiagnosticResultExt::{self, *};
 }
 
 /// A convenience type which is designed to be returned from a proc_macro2-based macro
@@ -78,17 +77,6 @@ pub enum DiagnosticResult<T> {
 }
 
 trait Sealed {}
-
-#[expect(private_bounds)]
-pub trait DR: Sealed {
-    fn foo() -> Self;
-}
-
-impl DR for DiagnosticStream {
-    fn foo() -> Self {
-        todo!()
-    }
-}
 
 #[deny(unfulfilled_lint_expectations)]
 #[expect(private_bounds)]

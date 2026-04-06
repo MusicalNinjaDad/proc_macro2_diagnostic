@@ -1,10 +1,11 @@
+#![feature(import_trait_associated_functions)]
 #![feature(never_type)]
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
 
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use proc_macro2_diagnostic::{DiagnosticResult, DiagnosticStream};
+use proc_macro2_diagnostic::prelude::*;
 use quote::{format_ident, quote};
 
 /// Return a `struct #name`, or produce:
@@ -12,24 +13,24 @@ use quote::{format_ident, quote};
 /// - simple error with additional help if name == "helpme"
 fn zst(name: &str) -> DiagnosticStream {
     match name {
-        "fail" => DiagnosticResult::error("failed")?,
-        "helpme" => DiagnosticResult::error("failed").add_help(Span::call_site(), "haha")?,
+        "fail" => error("failed"),
+        "helpme" => error("failed").add_help(Span::call_site(), "haha")?,
         "warn" => {
             let name = format_ident!("{name}");
             let zst = quote! {struct #name;};
-            let zst = DiagnosticResult::warn_spanned(zst, Span::call_site(), "be careful")?;
-            DiagnosticResult::Ok(zst)
+            let zst = warn_spanned(zst, Span::call_site(), "be careful")?;
+            Ok(zst)
         }
         "helpful_warning" => {
             let name = format_ident!("{name}");
             let zst = quote! {struct #name;};
-            let zst = DiagnosticResult::warn_spanned(zst, Span::call_site(), "be careful")
+            let zst = warn_spanned(zst, Span::call_site(), "be careful")
                 .add_help(Span::call_site(), "this might help you understand")?;
-            DiagnosticResult::Ok(zst)
+            Ok(zst)
         }
         _ => {
             let name = format_ident!("{name}");
-            DiagnosticResult::Ok(quote! {struct #name;})
+            Ok(quote! {struct #name;})
         }
     }
 }
