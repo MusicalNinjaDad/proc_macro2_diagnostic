@@ -69,14 +69,33 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// `warn_spanned()` which ensure all invariants are maintained.
 ///
 /// ### Implementing [std::convert::TryFrom]
-/// As it is not possible to directly create a `Diagnostic`, use
-/// ```ignore code-snippet
-/// impl TryFrom ... {
-///     type Error = DiagnosticResult<T>
-///     fn try_from ... -> Result<T, DiagnosticResult<T>> {
-///         ...
+/// As it is not possible to directly create a pure Diagnostic, use `Result<T, DiagnosticResult<T>>`
+/// ```
+/// #![feature(never_type)]
+/// use proc_macro2_diagnostic::prelude::*;
+/// use syn::{parse_quote, LitInt};
+/// 
+/// struct Even(i32);
+/// 
+/// impl TryFrom<LitInt> for Even {
+///     type Error = DiagnosticResult<Even>;
+///     fn try_from(num: LitInt) -> Result<Even, DiagnosticResult<Even>> {
+///         let num: i32 = num.base10_parse().unwrap();
+///         if num % 2 == 0 {
+///             std::result::Result::Ok(Even(num))
+///         } else {
+///             std::result::Result::Err(error("odd number"))
+///         }
 ///     }
 /// }
+/// 
+/// fn is_even(num: LitInt) -> DiagnosticResult<Even> {
+///     let even = Even::try_from(num)?;
+///     Ok(even)
+/// }
+/// 
+/// assert!(is_even(parse_quote!(1)).is_error());
+/// assert!(is_even(parse_quote!(2)).is_ok());
 /// ```
 /// which is a little ugly, but will simplify to either `T` or an unwrapped `DiagnosticResult<T>`
 /// on `?`.
