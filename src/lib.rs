@@ -43,14 +43,14 @@ extern crate proc_macro;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
 
-use crate::DiagnosticResult::{Err, Ok, Warning};
+use crate::DiagnosticResult_::{Err, Ok as Ok_, Warning};
 use crate::internal::*;
 
 /// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
 pub mod prelude {
-    pub use super::DiagnosticResult::{self, Ok};
+    pub use super::DiagnosticResult;
     pub use super::DiagnosticStream;
-    pub use super::{error, warn_spanned};
+    pub use super::{Ok, error, warn_spanned};
 }
 
 /// A convenience type which is designed to be returned from a proc_macro2-based macro
@@ -60,7 +60,7 @@ pub mod prelude {
 pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 
 #[derive(Clone, Debug)]
-#[must_use = "this `DiagnosticResult` may be an `Err` variant, which should be handled, or a Warning, which should be emitted"]
+#[must_use = "this `DiagnosticResult` may be an error or a warning, which should be emitted"]
 #[non_exhaustive]
 /// Result-like type which wraps any Ok-type and provides a `Diagnostic`-like API &
 /// functionality for non-OK cases.
@@ -84,10 +84,22 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 ///
 /// ### Future changes
 /// - TODO: #11 Provide complete Result API
-pub enum DiagnosticResult<T> {
+pub struct DiagnosticResult<T> {
+    inner: DiagnosticResult_<T>,
+}
+
+#[derive(Clone, Debug)]
+enum DiagnosticResult_<T> {
     Ok(T),
     Warning(T, Diagnostic),
     Err(Diagnostic),
+}
+
+#[expect(non_snake_case, reason = "same feel as a Result type alias")]
+pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
+    DiagnosticResult {
+        inner: DiagnosticResult_::Ok(val),
+    }
 }
 
 /// Create an `Err` result containing an `Error` diagnostic **spanning the macro call_site**
@@ -95,12 +107,14 @@ pub enum DiagnosticResult<T> {
 /// The message can be anything that implements `ToString` (incl. everything `Display`),
 /// this means you can use format_args!() to avoid intermediate allocations.
 pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
-    Err(Diagnostic {
-        level: Level::Error,
-        message: message.to_string(),
-        spans: vec![Span::call_site()],
-        children: vec![],
-    })
+    DiagnosticResult {
+        inner: Err(Diagnostic {
+            level: Level::Error,
+            message: message.to_string(),
+            spans: vec![Span::call_site()],
+            children: vec![],
+        }),
+    }
 }
 
 /// Create a `Warning` result containing _both_ a `Warning` diagnostic at one or more spans
@@ -115,15 +129,17 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     span: SPN,
     message: MSG,
 ) -> DiagnosticResult<T> {
-    Warning(
-        value,
-        Diagnostic {
-            level: Level::Warning,
-            message: message.to_string(),
-            spans: span.into_spans(),
-            children: vec![],
-        },
-    )
+    DiagnosticResult {
+        inner: Warning(
+            value,
+            Diagnostic {
+                level: Level::Warning,
+                message: message.to_string(),
+                spans: span.into_spans(),
+                children: vec![],
+            },
+        ),
+    }
 }
 
 impl<T> DiagnosticResult<T> {
@@ -132,10 +148,10 @@ impl<T> DiagnosticResult<T> {
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
     pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
-        match self {
+        match self.inner {
             // TODO: #24 Handle attempt to attach a help message to an OK value
-            Ok(_) => todo!("Handle attempt to attach a help message to an OK value"),
-            DiagnosticResult::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
+            Ok_(_) => todo!("Handle attempt to attach a help message to an OK value"),
+            DiagnosticResult_::Warning(_, ref mut diagnostic) | Err(ref mut diagnostic) => {
                 diagnostic.children.push(Diagnostic {
                     level: Level::Help,
                     message: message.to_string(),
@@ -154,9 +170,9 @@ impl<T> DiagnosticResult<T> {
     where
         T: Debug,
     {
-        match self {
-            Ok(t) => t,
-            Self::Warning(val, warning) => panic!(
+        match self.inner {
+            Ok_(t) => t,
+            Warning(val, warning) => panic!(
                 "Called unwrap on value {:?} with accompanying warning: {:?}",
                 val, warning
             ),
@@ -281,25 +297,28 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
     type Residual = DiagnosticResult<!>;
 
     fn from_output(output: Self::Output) -> Self {
-        Self::Ok(output)
+        Self { inner: Ok_(output) }
     }
 
     fn branch(self) -> std::ops::ControlFlow<Self::Residual, Self::Output> {
-        match self {
-            Self::Ok(t) => std::ops::ControlFlow::Continue(t),
-            Self::Warning(t, d) => {
+        match self.inner {
+            // BUG RISK?? Removal of Self - confusion between <T> and <!>??
+            Ok_(t) => std::ops::ControlFlow::Continue(t),
+            Warning(t, d) => {
                 d.emit();
                 std::ops::ControlFlow::Continue(t)
             }
-            Self::Err(d) => std::ops::ControlFlow::Break(DiagnosticResult::Err(d)),
+            Err(d) => std::ops::ControlFlow::Break(DiagnosticResult { inner: Err(d) }),
         }
     }
 }
 
 impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     fn from_residual(residual: DiagnosticResult<!>) -> Self {
-        match residual {
-            DiagnosticResult::Err(residual) => DiagnosticResult::Err(residual),
+        match residual.inner {
+            Err(residual) => Self {
+                inner: Err(residual),
+            },
         }
     }
 }
@@ -323,13 +342,13 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
 /// [proc_macro::TokenStream] in case of [DiagnosticResult::Err].
 impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
-        match result {
-            DiagnosticResult::Ok(t) => t.into(),
-            DiagnosticResult::Warning(t, warning) => {
+        match result.inner {
+            Ok_(t) => t.into(),
+            Warning(t, warning) => {
                 warning.emit();
                 t.into()
             }
-            DiagnosticResult::Err(error) => {
+            Err(error) => {
                 error.emit();
                 TokenStream1::new()
             }
