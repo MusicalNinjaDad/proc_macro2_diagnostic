@@ -233,6 +233,8 @@ impl<T> DiagnosticResult<T> {
 }
 
 mod internal {
+    use std::fmt::Display;
+
     use proc_macro2::Span;
 
     #[derive(Debug, Clone)]
@@ -254,6 +256,17 @@ mod internal {
         Warning,
         Note,
         Help,
+    }
+
+    impl Display for Level {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Level::Error => write!(f, "error"),
+                Level::Warning => write!(f, "warning"),
+                Level::Note => write!(f, "note"),
+                Level::Help => write!(f, "help"),
+            }
+        }
     }
 
     impl Diagnostic {
@@ -284,7 +297,7 @@ mod internal {
             let is_call_site = |span: &&Span| {
                 span.local_file() == cs_file && span.start() == cs_start && span.end() == cs_end
             };
-            
+
             self.spans.iter().find(is_call_site).is_some()
                 || self
                     .children
@@ -298,7 +311,10 @@ mod internal {
             if !self.spans_call_site() {
                 self.add_note(
                     Span::call_site(),
-                    "this warning originates from the macro invocation here".to_string(),
+                    format!(
+                        "this {} originates from the macro invocation here",
+                        self.level
+                    ),
                 );
             };
             let spans = self.as_spans();
