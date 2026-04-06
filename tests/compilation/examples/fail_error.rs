@@ -1,6 +1,6 @@
-use proc_macro2_diagnostic_fixture::error;
+use proc_macro2_diagnostic_fixture::error_no_help;
 
-#[error]
+#[error_no_help]
 fn foo() {
     todo!()
 }

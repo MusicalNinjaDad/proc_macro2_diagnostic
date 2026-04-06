@@ -1,6 +1,6 @@
-use proc_macro2_diagnostic_fixture::{error, span_slice_help};
+use proc_macro2_diagnostic_fixture::{error_no_help, span_slice_help};
 
-#[error]
+#[error_no_help]
 // Trybuild needs a compiler error, that doesn't kill clippy.
 // it won't fail on just a warning
 fn foo() {

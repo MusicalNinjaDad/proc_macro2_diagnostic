@@ -1,10 +1,11 @@
+#![feature(import_trait_associated_functions)]
 #![feature(never_type)]
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
 
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use proc_macro2_diagnostic::{DiagnosticResult, DiagnosticStream};
+use proc_macro2_diagnostic::prelude::*;
 use quote::{format_ident, quote};
 
 /// Return a `struct #name`, or produce:
@@ -12,24 +13,24 @@ use quote::{format_ident, quote};
 /// - simple error with additional help if name == "helpme"
 fn zst(name: &str) -> DiagnosticStream {
     match name {
-        "fail" => DiagnosticResult::error("failed")?,
-        "helpme" => DiagnosticResult::error("failed").add_help(Span::call_site(), "haha")?,
+        "fail" => error("failed")?,
+        "helpme" => error("failed").add_help(Span::call_site(), "haha")?,
         "warn" => {
             let name = format_ident!("{name}");
             let zst = quote! {struct #name;};
-            let zst = DiagnosticResult::warn_spanned(zst, Span::call_site(), "be careful")?;
-            DiagnosticResult::Ok(zst)
+            let zst = warn_spanned(zst, Span::call_site(), "be careful")?;
+            Ok(zst)
         }
         "helpful_warning" => {
             let name = format_ident!("{name}");
             let zst = quote! {struct #name;};
-            let zst = DiagnosticResult::warn_spanned(zst, Span::call_site(), "be careful")
+            let zst = warn_spanned(zst, Span::call_site(), "be careful")
                 .add_help(Span::call_site(), "this might help you understand")?;
-            DiagnosticResult::Ok(zst)
+            Ok(zst)
         }
         _ => {
             let name = format_ident!("{name}");
-            DiagnosticResult::Ok(quote! {struct #name;})
+            Ok(quote! {struct #name;})
         }
     }
 }
@@ -40,7 +41,7 @@ pub fn error_and_help(_: TokenStream, _: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn error(_: TokenStream, _: TokenStream) -> TokenStream {
+pub fn error_no_help(_: TokenStream, _: TokenStream) -> TokenStream {
     proc_macro::TokenStream::from(zst("fail"))
 }
 
@@ -60,7 +61,7 @@ pub fn vec_span_warn(input: TokenStream) -> TokenStream {
         })
         .collect();
     let ts = quote! { struct VecSpanWarn; };
-    let result = DiagnosticResult::warn_spanned(ts, spans, "warning with multiple spans");
+    let result = warn_spanned(ts, spans, "warning with multiple spans");
     proc_macro::TokenStream::from(result)
 }
 
@@ -75,7 +76,7 @@ pub fn span_slice_help(input: TokenStream) -> TokenStream {
         })
         .collect();
     let ts = quote! { struct SpanSliceHelp; };
-    let result = DiagnosticResult::warn_spanned(ts, Span::call_site(), "warning")
+    let result = warn_spanned(ts, Span::call_site(), "warning")
         .add_help(&spans[..], "help with multiple spans");
     proc_macro::TokenStream::from(result)
 }

@@ -1,6 +1,6 @@
 [package]
 name = "proc_macro2_diagnostic"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 readme = "README.md"
 description = "Use `Diagnostic` compiler messages from proc_macro2 code with Result-like syntax."
@@ -21,6 +21,7 @@ proc-macro2 = "1.0.106"
 [dev-dependencies]
 proc_macro2_diagnostic_fixture = {workspace = true}
 quote = "1.0.45"
+syn = "2.0.117"
 trybuild = "1.0.116"
 
 [workspace]
