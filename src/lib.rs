@@ -488,6 +488,22 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
 }
 
 // TODO: #17 impl<T> FromResidual<Result<!, syn::Error>> for DiagnosticResult<T>
+impl<T> std::ops::FromResidual<Result<std::convert::Infallible, syn::Error>>
+    for DiagnosticResult<T>
+{
+    fn from_residual(result: Result<std::convert::Infallible, syn::Error>) -> Self {
+        match result {
+            // TODO: handle error with multiple messages (use into_iter...?)
+            Err(e) => DiagnosticResult {
+                inner: DiagnosticResult_::Error(Diagnostic::new(
+                    Level::Error,
+                    e.span(),
+                    e.to_string(),
+                )),
+            },
+        }
+    }
+}
 
 /// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] and/or convert
 /// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty
