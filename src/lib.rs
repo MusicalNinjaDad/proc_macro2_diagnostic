@@ -505,7 +505,6 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, syn::Error>>
 {
     fn from_residual(result: Result<std::convert::Infallible, syn::Error>) -> Self {
         match result {
-            // TODO: handle error with multiple messages (use into_iter...?)
             Err(e) => DiagnosticResult {
                 inner: DiagnosticResult_::Error(e.into()),
             },
