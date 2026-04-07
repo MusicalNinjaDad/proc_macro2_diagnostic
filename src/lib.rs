@@ -328,6 +328,10 @@ mod internal {
             }
         }
 
+        pub fn push(&mut self, child: Diagnostic) {
+            self.children.push(child);
+        }
+
         pub fn add_child<MSG: ToString, SPN: MultiSpan>(
             &mut self,
             level: Level,
@@ -377,6 +381,16 @@ mod internal {
                 pm_diagnostic = child.add_to_parent(pm_diagnostic);
             }
             pm_diagnostic.emit();
+        }
+    }
+
+    impl From<syn::Error> for Diagnostic {
+        fn from(error: syn::Error) -> Self {
+            let mut diagnostic = Diagnostic::new(Level::Error, error.span(), error.to_string());
+            for err in error.into_iter().skip(1) {
+                diagnostic.push(err.into());
+            }
+            diagnostic
         }
     }
 
@@ -498,22 +512,6 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, syn::Error>>
                 inner: DiagnosticResult_::Error(e.into()),
             },
         }
-    }
-}
-
-impl From<syn::Error> for Diagnostic {
-    fn from(error: syn::Error) -> Self {
-        let mut diagnostic = Diagnostic::new(Level::Error, error.span(), error.to_string());
-        for err in error.into_iter().skip(1) {
-            diagnostic.push(err.into());
-        }
-        diagnostic
-    }
-}
-
-impl Diagnostic {
-    fn push(&mut self, child: Diagnostic) {
-        self.children.push(child);
     }
 }
 
