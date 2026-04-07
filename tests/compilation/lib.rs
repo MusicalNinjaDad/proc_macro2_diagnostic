@@ -2,6 +2,7 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use proc_macro2_diagnostic::prelude::*;
 use quote::{format_ident, quote};
+use syn::spanned::Spanned;
 
 /// Return a `struct #name`, or produce:
 /// - simple error if name == "fail"
@@ -130,6 +131,20 @@ pub fn combined_syn_errors(input: TokenStream) -> TokenStream {
             e
         })?;
 
+        Ok(quote! {struct #ident;})
+    }
+
+    make_struct(input.into()).into()
+}
+
+#[proc_macro]
+pub fn extend_syn_error(input: TokenStream) -> TokenStream {
+    use proc_macro2::{Ident, TokenStream as TokenStream2};
+    use syn::parse2;
+
+    fn make_struct(input: TokenStream2) -> DiagnosticStream {
+        let ident: Ident =
+            parse2(input.clone()).add_help(input.span(), "this is not a valid identifier")?;
         Ok(quote! {struct #ident;})
     }
 

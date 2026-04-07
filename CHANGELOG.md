@@ -4,7 +4,8 @@
 
 ### New features
 
-- Use `?` on a syn::Error in a function that returns a `DiagnosticResult` (or a `Result<_, DiagnosticResult>`)
+- Use `?` on a `Result<T, syn::Error>` in a function that returns a `DiagnosticResult` (or a `Result<_, DiagnosticResult>`)
+- `add_help()` or `add_note()` to a `Result<T, syn::Error>`
 
 ## [v0.2.0](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.2.0) - Simplify & focus API
 

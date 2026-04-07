@@ -67,6 +67,10 @@
 //! proc_macro2_diagnostic <- This crate
 //! └── proc-macro2
 //!     └── unicode-ident
+//! └── syn
+//!     ├── quote
+//!     │   └── proc-macro2
+//!     └── unicode-ident
 //! ```
 
 use std::fmt::Debug;
@@ -81,6 +85,7 @@ use crate::internal::*;
 
 /// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
 pub mod prelude {
+    pub use super::AsDiagnostic;
     pub use super::DiagnosticResult;
     pub use super::DiagnosticStream;
     pub use super::{Ok, error, error_spanned, warn_spanned};
@@ -214,8 +219,57 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     }
 }
 
+pub trait AsDiagnostic<T> {
+    /// Convert to a DiagnosticResult and, _if an `Err`_,  add a `Help` message at one or more `Span`s.
+    ///
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations.
+    fn add_help<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T>;
+
+    /// Convert to a DiagnosticResult and, _if an `Err`_, add a `Note` at one or more `Span`s.
+    ///
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations.
+    fn add_note<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T>;
+}
+
+impl<T, E> AsDiagnostic<T> for Result<T, E>
+where
+    E: Into<DiagnosticResult<T>>,
+{
+    fn add_help<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T> {
+        match self {
+            Result::Ok(val) => Ok(val),
+            Result::Err(e) => e.into().add_help(span, message),
+        }
+    }
+
+    fn add_note<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T> {
+        match self {
+            Result::Ok(val) => Ok(val),
+            Result::Err(e) => e.into().add_note(span, message),
+        }
+    }
+}
+
 impl<T> DiagnosticResult<T> {
-    /// Add a `Help` message to an existing result at one or more `Span`s.
+    /// Add a `Help` message to an existing warning or error at one or more `Span`s.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
@@ -229,7 +283,7 @@ impl<T> DiagnosticResult<T> {
         }
     }
 
-    /// Add a `Note` to an existing result at one or more `Span`s.
+    /// Add a `Note` to an existing warning or error at one or more `Span`s.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
