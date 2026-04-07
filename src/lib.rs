@@ -123,8 +123,7 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// impl TryFrom<LitInt> for Even {
 ///     type Error = DiagnosticResult<Even>;
 ///     fn try_from(num: LitInt) -> Result<Even, DiagnosticResult<Even>> {
-///         // TODO: #17 allow direct ? from syn::Error
-///         let num: i32 = num.base10_parse().unwrap();
+///         let num: i32 = num.base10_parse()?;
 ///         if num % 2 == 0 {
 ///             std::result::Result::Ok(Even(num))
 ///         } else {
@@ -328,6 +327,10 @@ mod internal {
             }
         }
 
+        pub fn push(&mut self, child: Diagnostic) {
+            self.children.push(child);
+        }
+
         pub fn add_child<MSG: ToString, SPN: MultiSpan>(
             &mut self,
             level: Level,
@@ -358,7 +361,20 @@ mod internal {
             self.spans.iter().any(is_call_site)
                 || self.children.iter().any(Diagnostic::spans_call_site)
         }
+    }
 
+    impl From<syn::Error> for Diagnostic {
+        fn from(error: syn::Error) -> Self {
+            let mut diagnostic = Diagnostic::new(Level::Error, error.span(), error.to_string());
+            for err in error.into_iter().skip(1) {
+                diagnostic.push(err.into());
+            }
+            diagnostic
+        }
+    }
+
+    /// Functions for the conversion to the proc_macro world.
+    impl Diagnostic {
         /// Convert to a [proc_macro::Diagnostic] and then emit.
         pub fn emit(mut self) {
             if !self.spans_call_site() {
@@ -378,10 +394,7 @@ mod internal {
             }
             pm_diagnostic.emit();
         }
-    }
 
-    /// Supporting functions for the conversion to the proc_macro world.
-    impl Diagnostic {
         /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
         /// Consumes both and returns a new [proc_macro::Diagnostic].
         fn add_to_parent(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
@@ -487,7 +500,29 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
     }
 }
 
-// TODO: #17 impl<T> FromResidual<Result<!, syn::Error>> for DiagnosticResult<T>
+impl<T, E> std::ops::FromResidual<Result<std::convert::Infallible, E>> for DiagnosticResult<T>
+where
+    E: Into<Diagnostic>,
+{
+    fn from_residual(result: Result<std::convert::Infallible, E>) -> Self {
+        match result {
+            Err(e) => DiagnosticResult {
+                inner: DiagnosticResult_::Error(e.into()),
+            },
+        }
+    }
+}
+
+impl<T, E> From<E> for DiagnosticResult<T>
+where
+    E: Into<Diagnostic> + std::error::Error,
+{
+    fn from(error: E) -> Self {
+        Self {
+            inner: DiagnosticResult_::Error(error.into()),
+        }
+    }
+}
 
 /// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] and/or convert
 /// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty

@@ -1,0 +1,30 @@
+error: expected identifier
+ --> tests/compilation/examples/fail_convert_syn.rs:4:20
+  |
+4 | convert_syn_error!(1);
+  |                    ^
+  |
+note: this error originates from the macro invocation here
+ --> tests/compilation/examples/fail_convert_syn.rs:4:1
+  |
+4 | convert_syn_error!(1);
+  | ^^^^^^^^^^^^^^^^^^^^^
+  = note: this error originates in the macro `convert_syn_error` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: expected identifier
+ --> tests/compilation/examples/fail_convert_syn.rs:6:22
+  |
+6 | combined_syn_errors!(1);
+  |                      ^
+  |
+error: expected group token
+ --> tests/compilation/examples/fail_convert_syn.rs:6:22
+  |
+6 | combined_syn_errors!(1);
+  |                      ^
+note: this error originates from the macro invocation here
+ --> tests/compilation/examples/fail_convert_syn.rs:6:1
+  |
+6 | combined_syn_errors!(1);
+  | ^^^^^^^^^^^^^^^^^^^^^^^
+  = note: this error originates in the macro `combined_syn_errors` (in Nightly builds, run with -Z macro-backtrace for more info)

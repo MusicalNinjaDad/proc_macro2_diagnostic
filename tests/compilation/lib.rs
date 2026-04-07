@@ -104,3 +104,34 @@ pub fn just_a_note(_: TokenStream) -> TokenStream {
     let my_struct = zst("Bob").add_note(Span::call_site(), "this is Bob");
     my_struct.into()
 }
+
+#[proc_macro]
+pub fn convert_syn_error(input: TokenStream) -> TokenStream {
+    use proc_macro2::{Ident, TokenStream as TokenStream2};
+    use syn::parse2;
+
+    fn make_struct(input: TokenStream2) -> DiagnosticStream {
+        let ident: Ident = parse2(input)?;
+        Ok(quote! {struct #ident;})
+    }
+
+    make_struct(input.into()).into()
+}
+
+#[proc_macro]
+pub fn combined_syn_errors(input: TokenStream) -> TokenStream {
+    use proc_macro2::{Group, Ident, TokenStream as TokenStream2};
+    use syn::parse2;
+
+    fn make_struct(input: TokenStream2) -> DiagnosticStream {
+        let not_a_group = parse2::<Group>(input.clone()).unwrap_err();
+        let ident = parse2::<Ident>(input).map_err(|mut e| {
+            e.combine(not_a_group);
+            e
+        })?;
+
+        Ok(quote! {struct #ident;})
+    }
+
+    make_struct(input.into()).into()
+}
