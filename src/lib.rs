@@ -1,5 +1,4 @@
-#![allow(stable_features, reason="MSRV for pinned nightly / BOOTSTRAP users")]
-#![feature(assert_matches)]
+#![cfg_attr(not(stable_assert_matches), feature(assert_matches))]
 #![feature(never_type)]
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
@@ -456,7 +455,11 @@ impl From<DiagnosticStream> for TokenStream1 {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(stable_assert_matches))]
     use std::assert_matches::assert_matches;
+
+    #[cfg(stable_assert_matches)]
+    use std::assert_matches;
 
     use super::*;
 
