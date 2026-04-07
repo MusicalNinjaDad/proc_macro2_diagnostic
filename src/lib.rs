@@ -40,6 +40,8 @@
 //! > The authors consider all of the above features to be reliable and already well advanced in the
 //! > stabilisation process.
 //!
+//! You do not need to enable these in your own code, the list is for information only.
+//!
 //! ### Stability guarantees
 //!
 //! We run automated tests **every month** to ensure no fundamental changes affect this crate and

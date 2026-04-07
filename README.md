@@ -30,6 +30,8 @@ Given that this crate exposes an experimental API from std it makes use of exper
 >
 > The authors consider all of the above features to be reliable and already well advanced in the stabilisation process.
 
+You do not need to enable these in your own code, the list is for information only.
+
 ### Stability guarantees
 
 We run automated tests **every month** to ensure no fundamental changes affect this crate and test every PR against the current nightly, as well as the current equivalent beta & stable. If you find an issue before we do, please [raise an issue on github](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/issues).
