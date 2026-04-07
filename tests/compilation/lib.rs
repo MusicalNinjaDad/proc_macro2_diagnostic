@@ -41,6 +41,19 @@ pub fn error_no_help(_: TokenStream, _: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
+pub fn spanned_error(input: TokenStream) -> TokenStream {
+    let input: proc_macro2::TokenStream = input.into();
+    let first_item: Span = input
+        .into_iter()
+        .find_map(|tt| match tt {
+            proc_macro2::TokenTree::Ident(ident) => Some(ident.span()),
+            _ => None,
+        })
+        .unwrap();
+    error_spanned(first_item, "spanned error").into()
+}
+
+#[proc_macro]
 pub fn no_error(_: TokenStream) -> TokenStream {
     proc_macro::TokenStream::from(zst("bingo"))
 }

@@ -83,7 +83,7 @@ use crate::internal::*;
 pub mod prelude {
     pub use super::DiagnosticResult;
     pub use super::DiagnosticStream;
-    pub use super::{Ok, error, warn_spanned};
+    pub use super::{Ok, error, error_spanned, warn_spanned};
 }
 
 /// A convenience type which is designed to be returned from a proc_macro2-based macro
@@ -178,6 +178,21 @@ pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
 pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
     DiagnosticResult {
         inner: Error(Diagnostic::new(Level::Error, Span::call_site(), message)),
+    }
+}
+
+/// Create an error at the given Span.
+///
+/// The message can be anything that implements `ToString` (incl. everything `Display`),
+/// this means you can use format_args!() to avoid intermediate allocations.
+///
+/// A note will be added to the error when emitted, which highlights the original call site.
+pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
+    span: SPN,
+    message: MSG,
+) -> DiagnosticResult<T> {
+    DiagnosticResult {
+        inner: Error(Diagnostic::new(Level::Error, span, message)),
     }
 }
 
