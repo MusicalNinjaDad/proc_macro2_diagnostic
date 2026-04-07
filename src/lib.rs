@@ -171,7 +171,7 @@ pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
     DiagnosticResult { inner: Ok_(val) }
 }
 
-/// Create an `Err` result containing an `Error` diagnostic **spanning the macro call_site**
+/// Create an error **spanning the macro call_site**
 ///
 /// The message can be anything that implements `ToString` (incl. everything `Display`),
 /// this means you can use format_args!() to avoid intermediate allocations.
@@ -181,8 +181,8 @@ pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
     }
 }
 
-/// Create a `Warning` result containing _both_ a `Warning` diagnostic at one or more spans
-/// _and_ a valid value.
+/// Create a warning which will emit a message at the given span and deconstruct
+/// to a valid value via `?`.
 ///
 /// The message can be anything that implements `ToString` (incl. everything `Display`),
 /// this means you can use format_args!() to avoid intermediate allocations.
