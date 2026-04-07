@@ -438,7 +438,6 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
 
     fn branch(self) -> std::ops::ControlFlow<Self::Residual, Self::Output> {
         match self.inner {
-            // BUG RISK?? Removal of Self - confusion between <T> and <!>??
             Ok_(t) => std::ops::ControlFlow::Continue(t),
             Warning(t, d) => {
                 d.emit();
