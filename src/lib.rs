@@ -76,7 +76,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
 
-use crate::DiagnosticResult_::{Fatal, NonFatal, Ok as Ok_};
+use crate::DiagnosticResult_::{Error, Ok as Ok_, Warning};
 use crate::internal::*;
 
 /// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
@@ -161,8 +161,8 @@ pub enum DiagnosticResultKind {
 #[derive(Clone, Debug)]
 enum DiagnosticResult_<T> {
     Ok(T),
-    NonFatal(T, Diagnostic),
-    Fatal(Diagnostic),
+    Warning(T, Diagnostic),
+    Error(Diagnostic),
 }
 
 /// Create an `Ok` result.
@@ -177,7 +177,7 @@ pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
 /// this means you can use format_args!() to avoid intermediate allocations.
 pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
     DiagnosticResult {
-        inner: Fatal(Diagnostic::new(Level::Error, Span::call_site(), message)),
+        inner: Error(Diagnostic::new(Level::Error, Span::call_site(), message)),
     }
 }
 
@@ -194,7 +194,7 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     message: MSG,
 ) -> DiagnosticResult<T> {
     DiagnosticResult {
-        inner: NonFatal(value, Diagnostic::new(Level::Warning, span, message)),
+        inner: Warning(value, Diagnostic::new(Level::Warning, span, message)),
     }
 }
 
@@ -205,10 +205,8 @@ impl<T> DiagnosticResult<T> {
     /// this means you can use format_args!() to avoid intermediate allocations.
     pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self.inner {
-            Ok_(val) => Self {
-                inner: NonFatal(val, Diagnostic::new(Level::Help, span, message)),
-            },
-            NonFatal(_, ref mut diagnostic) | Fatal(ref mut diagnostic) => {
+            Ok_(_) => self,
+            Warning(_, ref mut diagnostic) | Error(ref mut diagnostic) => {
                 diagnostic.add_help(span, message);
                 self
             }
@@ -221,10 +219,8 @@ impl<T> DiagnosticResult<T> {
     /// this means you can use format_args!() to avoid intermediate allocations.
     pub fn add_note<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self.inner {
-            Ok_(val) => Self {
-                inner: NonFatal(val, Diagnostic::new(Level::Note, span, message)),
-            },
-            NonFatal(_, ref mut diagnostic) | Fatal(ref mut diagnostic) => {
+            Ok_(_) => self,
+            Warning(_, ref mut diagnostic) | Error(ref mut diagnostic) => {
                 diagnostic.add_note(span, message);
                 self
             }
@@ -247,13 +243,8 @@ impl<T> DiagnosticResult<T> {
     pub fn kind(&self) -> DiagnosticResultKind {
         match self.inner {
             DiagnosticResult_::Ok(_) => DiagnosticResultKind::Ok,
-            DiagnosticResult_::NonFatal(_, ref diagnostic) => match diagnostic.level {
-                Level::Warning => DiagnosticResultKind::Warning,
-                Level::Error => DiagnosticResultKind::Error,
-                Level::Note => DiagnosticResultKind::Ok,
-                Level::Help => DiagnosticResultKind::Ok,
-            },
-            DiagnosticResult_::Fatal(_) => DiagnosticResultKind::Error,
+            DiagnosticResult_::Warning(_, _) => DiagnosticResultKind::Warning,
+            DiagnosticResult_::Error(_) => DiagnosticResultKind::Error,
         }
     }
 
@@ -264,11 +255,11 @@ impl<T> DiagnosticResult<T> {
     {
         match self.inner {
             Ok_(t) => t,
-            NonFatal(val, warning) => panic!(
+            Warning(val, warning) => panic!(
                 "Called unwrap on value {:?} with accompanying warning: {:?}",
                 val, warning
             ),
-            Fatal(error) => panic!("Called unwrap on an error: {:?}", error),
+            Error(error) => panic!("Called unwrap on an error: {:?}", error),
         }
     }
 }
@@ -447,13 +438,12 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
 
     fn branch(self) -> std::ops::ControlFlow<Self::Residual, Self::Output> {
         match self.inner {
-            // BUG RISK?? Removal of Self - confusion between <T> and <!>??
             Ok_(t) => std::ops::ControlFlow::Continue(t),
-            NonFatal(t, d) => {
+            Warning(t, d) => {
                 d.emit();
                 std::ops::ControlFlow::Continue(t)
             }
-            Fatal(d) => std::ops::ControlFlow::Break(DiagnosticResult { inner: Fatal(d) }),
+            Error(d) => std::ops::ControlFlow::Break(DiagnosticResult { inner: Error(d) }),
         }
     }
 }
@@ -461,8 +451,8 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
 impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     fn from_residual(residual: DiagnosticResult<!>) -> Self {
         match residual.inner {
-            Fatal(residual) => Self {
-                inner: Fatal(residual),
+            Error(residual) => Self {
+                inner: Error(residual),
             },
         }
     }
@@ -489,11 +479,11 @@ impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
         match result.inner {
             Ok_(t) => t.into(),
-            NonFatal(t, warning) => {
+            Warning(t, warning) => {
                 warning.emit();
                 t.into()
             }
-            Fatal(error) => {
+            Error(error) => {
                 error.emit();
                 TokenStream1::new()
             }
