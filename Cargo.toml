@@ -24,6 +24,9 @@ quote = "1.0.45"
 syn = "2.0.117"
 trybuild = "1.0.116"
 
+[build-dependencies]
+autocfg = "1.5.0"
+
 [workspace]
 members = ["tests/compilation"]
 
