@@ -181,12 +181,13 @@ pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
     }
 }
 
-/// Create an error at the given Span.
+/// Create an error at the given `Span`s.
 ///
 /// The message can be anything that implements `ToString` (incl. everything `Display`),
 /// this means you can use format_args!() to avoid intermediate allocations.
 ///
-/// A note will be added to the error when emitted, which highlights the original call site.
+/// A note will be added to the error when emitted, which highlights the original call site,
+/// unless you add one manually.
 pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
     span: SPN,
     message: MSG,
@@ -196,13 +197,14 @@ pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
     }
 }
 
-/// Create a warning which will emit a message at the given span and deconstruct
+/// Create a warning which will emit a message at the given `Span`s and deconstruct
 /// to a valid value via `?`.
 ///
 /// The message can be anything that implements `ToString` (incl. everything `Display`),
 /// this means you can use format_args!() to avoid intermediate allocations.
 ///
-/// A note will be added to the warning when emitted, which highlights the original call site.
+/// A note will be added to the warning when emitted, which highlights the original call site,
+/// unless you add one manually.
 pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     value: T,
     span: SPN,
@@ -214,7 +216,7 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
 }
 
 impl<T> DiagnosticResult<T> {
-    /// Add a `Help` message to an existing result at one or more spans.
+    /// Add a `Help` message to an existing result at one or more `Span`s.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
@@ -228,7 +230,7 @@ impl<T> DiagnosticResult<T> {
         }
     }
 
-    /// Add a `Note` to an existing result at one or more spans.
+    /// Add a `Note` to an existing result at one or more `Span`s.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
