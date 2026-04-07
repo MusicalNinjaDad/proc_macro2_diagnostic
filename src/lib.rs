@@ -76,7 +76,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
 
-use crate::DiagnosticResult_::{Error, Warning, Ok as Ok_};
+use crate::DiagnosticResult_::{Error, Ok as Ok_, Warning};
 use crate::internal::*;
 
 /// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
@@ -247,12 +247,7 @@ impl<T> DiagnosticResult<T> {
     pub fn kind(&self) -> DiagnosticResultKind {
         match self.inner {
             DiagnosticResult_::Ok(_) => DiagnosticResultKind::Ok,
-            DiagnosticResult_::Warning(_, ref diagnostic) => match diagnostic.level {
-                Level::Warning => DiagnosticResultKind::Warning,
-                Level::Error => DiagnosticResultKind::Error,
-                Level::Note => DiagnosticResultKind::Ok,
-                Level::Help => DiagnosticResultKind::Ok,
-            },
+            DiagnosticResult_::Warning(_, _) => DiagnosticResultKind::Warning,
             DiagnosticResult_::Error(_) => DiagnosticResultKind::Error,
         }
     }
