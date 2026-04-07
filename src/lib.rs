@@ -84,6 +84,7 @@ pub mod prelude {
     pub use super::DiagnosticResult;
     pub use super::DiagnosticStream;
     pub use super::{Ok, error, error_spanned, warn_spanned};
+    pub use super::AsDiagnostic;
 }
 
 /// A convenience type which is designed to be returned from a proc_macro2-based macro
@@ -211,6 +212,30 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
 ) -> DiagnosticResult<T> {
     DiagnosticResult {
         inner: Warning(value, Diagnostic::new(Level::Warning, span, message)),
+    }
+}
+
+pub trait AsDiagnostic<T> {
+    /// Convert to a DiagnosticResult and add a `Help` message at one or more `Span`s.
+    ///
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations.
+    fn add_help<MSG: ToString, SPN: MultiSpan>(self, span: SPN, message: MSG) -> DiagnosticResult<T>;
+    
+    /// Convert to a DiagnosticResult and add a `Note` at one or more `Span`s.
+    ///
+    /// The message can be anything that implements `ToString` (incl. everything `Display`),
+    /// this means you can use format_args!() to avoid intermediate allocations.
+    fn add_note<MSG: ToString, SPN: MultiSpan>(self, span: SPN, message: MSG) -> DiagnosticResult<T>;
+}
+
+impl<T, E> AsDiagnostic<T> for Result<T, E> where E: Into<DiagnosticResult<T>> {
+    fn add_help<MSG: ToString, SPN: MultiSpan>(self, span: SPN, message: MSG) -> DiagnosticResult<T> {
+        todo!()
+    }
+
+    fn add_note<MSG: ToString, SPN: MultiSpan>(self, span: SPN, message: MSG) -> DiagnosticResult<T> {
+        todo!()
     }
 }
 
