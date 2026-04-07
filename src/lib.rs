@@ -500,10 +500,11 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
     }
 }
 
-impl<T> std::ops::FromResidual<Result<std::convert::Infallible, syn::Error>>
-    for DiagnosticResult<T>
+impl<T, E> std::ops::FromResidual<Result<std::convert::Infallible, E>> for DiagnosticResult<T>
+where
+    E: Into<Diagnostic>,
 {
-    fn from_residual(result: Result<std::convert::Infallible, syn::Error>) -> Self {
+    fn from_residual(result: Result<std::convert::Infallible, E>) -> Self {
         match result {
             Err(e) => DiagnosticResult {
                 inner: DiagnosticResult_::Error(e.into()),
@@ -512,10 +513,15 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, syn::Error>>
     }
 }
 
-impl<T> From<syn::Error> for DiagnosticResult<T> {
-    fn from(error: syn::Error) -> Self {
+impl<T, E> From<E> for DiagnosticResult<T>
+where
+    E: Into<Diagnostic>,
+{
+    fn from(error: E) -> Self {
         Self {
-            inner: DiagnosticResult_::Error(Diagnostic::from(error)),
+            // OK to always be Error - as we are the only ones who can impl From<_> for Diagnostic
+            // so can always change this later ...
+            inner: DiagnosticResult_::Error(error.into()),
         }
     }
 }
