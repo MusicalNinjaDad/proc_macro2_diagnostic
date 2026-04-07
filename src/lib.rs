@@ -501,7 +501,6 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult
     }
 }
 
-// TODO: #17 impl<T> FromResidual<Result<!, syn::Error>> for DiagnosticResult<T>
 impl<T> std::ops::FromResidual<Result<std::convert::Infallible, syn::Error>>
     for DiagnosticResult<T>
 {
