@@ -216,7 +216,7 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
 }
 
 pub trait AsDiagnostic<T> {
-    /// Convert to a DiagnosticResult and, _if a `Err`_,  add a `Help` message at one or more `Span`s.
+    /// Convert to a DiagnosticResult and, _if an `Err`_,  add a `Help` message at one or more `Span`s.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
@@ -226,7 +226,7 @@ pub trait AsDiagnostic<T> {
         message: MSG,
     ) -> DiagnosticResult<T>;
 
-    /// Convert to a DiagnosticResult and, _if a `Err`_, add a `Note` at one or more `Span`s.
+    /// Convert to a DiagnosticResult and, _if an `Err`_, add a `Note` at one or more `Span`s.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
@@ -265,7 +265,7 @@ where
 }
 
 impl<T> DiagnosticResult<T> {
-    /// Add a `Help` message to an existing result at one or more `Span`s.
+    /// Add a `Help` message to an existing warning or error at one or more `Span`s.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
@@ -279,7 +279,7 @@ impl<T> DiagnosticResult<T> {
         }
     }
 
-    /// Add a `Note` to an existing result at one or more `Span`s.
+    /// Add a `Note` to an existing warning or error at one or more `Span`s.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
