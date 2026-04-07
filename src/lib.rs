@@ -515,12 +515,10 @@ where
 
 impl<T, E> From<E> for DiagnosticResult<T>
 where
-    E: Into<Diagnostic>,
+    E: Into<Diagnostic> + std::error::Error,
 {
     fn from(error: E) -> Self {
         Self {
-            // OK to always be Error - as we are the only ones who can impl From<_> for Diagnostic
-            // so can always change this later ...
             inner: DiagnosticResult_::Error(error.into()),
         }
     }
