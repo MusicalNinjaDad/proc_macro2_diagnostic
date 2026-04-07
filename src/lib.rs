@@ -495,13 +495,15 @@ impl<T> std::ops::FromResidual<Result<std::convert::Infallible, syn::Error>>
         match result {
             // TODO: handle error with multiple messages (use into_iter...?)
             Err(e) => DiagnosticResult {
-                inner: DiagnosticResult_::Error(Diagnostic::new(
-                    Level::Error,
-                    e.span(),
-                    e.to_string(),
-                )),
+                inner: DiagnosticResult_::Error(e.into()),
             },
         }
+    }
+}
+
+impl From<syn::Error> for Diagnostic {
+    fn from(error: syn::Error) -> Self {
+        Diagnostic::new(Level::Error, error.span(), error.to_string())
     }
 }
 
