@@ -67,6 +67,10 @@
 //! proc_macro2_diagnostic <- This crate
 //! └── proc-macro2
 //!     └── unicode-ident
+//! └── syn
+//!     ├── quote
+//!     │   └── proc-macro2
+//!     └── unicode-ident
 //! ```
 
 use std::fmt::Debug;

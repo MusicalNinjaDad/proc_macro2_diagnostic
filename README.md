@@ -50,6 +50,10 @@ Current dependency tree:
 proc_macro2_diagnostic <- This crate
 └── proc-macro2
     └── unicode-ident
+└── syn
+    ├── quote
+    │   └── proc-macro2
+    └── unicode-ident
 ```
 
 ## Alternatives
