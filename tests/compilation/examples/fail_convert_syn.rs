@@ -7,7 +7,6 @@ combined_syn_errors!(1);
 extend_syn_error!(FineToo);
 extend_syn_error!(2);
 
-
 fn main() {
     let _foo: Valid = Valid {};
     let _bar: AlsoValid = AlsoValid {};
