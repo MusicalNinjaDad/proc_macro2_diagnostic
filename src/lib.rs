@@ -205,9 +205,7 @@ impl<T> DiagnosticResult<T> {
     /// this means you can use format_args!() to avoid intermediate allocations.
     pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self.inner {
-            Ok_(val) => Self {
-                inner: Warning(val, Diagnostic::new(Level::Help, span, message)),
-            },
+            Ok_(_) => self,
             Warning(_, ref mut diagnostic) | Error(ref mut diagnostic) => {
                 diagnostic.add_help(span, message);
                 self
@@ -221,9 +219,7 @@ impl<T> DiagnosticResult<T> {
     /// this means you can use format_args!() to avoid intermediate allocations.
     pub fn add_note<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
         match self.inner {
-            Ok_(val) => Self {
-                inner: Warning(val, Diagnostic::new(Level::Note, span, message)),
-            },
+            Ok_(_) => self,
             Warning(_, ref mut diagnostic) | Error(ref mut diagnostic) => {
                 diagnostic.add_note(span, message);
                 self
