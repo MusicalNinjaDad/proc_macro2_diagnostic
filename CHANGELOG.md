@@ -7,7 +7,7 @@
 The API was deliberately narrowed, to minimise future breaking changes:
 
 - `DiagnosticResult` is now a struct with an inner, private enum
-- `Diagnostic` is not exposed publically (was previously exposed but unusable)
+- `Diagnostic` is not exposed publicly (was previously exposed but unusable)
 
 ### New features
 
