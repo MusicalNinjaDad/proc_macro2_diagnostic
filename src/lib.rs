@@ -362,7 +362,20 @@ mod internal {
             self.spans.iter().any(is_call_site)
                 || self.children.iter().any(Diagnostic::spans_call_site)
         }
+    }
 
+    impl From<syn::Error> for Diagnostic {
+        fn from(error: syn::Error) -> Self {
+            let mut diagnostic = Diagnostic::new(Level::Error, error.span(), error.to_string());
+            for err in error.into_iter().skip(1) {
+                diagnostic.push(err.into());
+            }
+            diagnostic
+        }
+    }
+
+    /// Functions for the conversion to the proc_macro world.
+    impl Diagnostic {
         /// Convert to a [proc_macro::Diagnostic] and then emit.
         pub fn emit(mut self) {
             if !self.spans_call_site() {
@@ -382,20 +395,7 @@ mod internal {
             }
             pm_diagnostic.emit();
         }
-    }
 
-    impl From<syn::Error> for Diagnostic {
-        fn from(error: syn::Error) -> Self {
-            let mut diagnostic = Diagnostic::new(Level::Error, error.span(), error.to_string());
-            for err in error.into_iter().skip(1) {
-                diagnostic.push(err.into());
-            }
-            diagnostic
-        }
-    }
-
-    /// Supporting functions for the conversion to the proc_macro world.
-    impl Diagnostic {
         /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
         /// Consumes both and returns a new [proc_macro::Diagnostic].
         fn add_to_parent(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
