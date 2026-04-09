@@ -126,8 +126,8 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// struct Even(i32);
 ///
 /// impl TryFrom<LitInt> for Even {
-///     type Error = DiagnosticResult<Even>;
-///     fn try_from(num: LitInt) -> Result<Even, DiagnosticResult<Even>> {
+///     type Error = DiagnosticResult<!>;
+///     fn try_from(num: LitInt) -> Result<Even, DiagnosticResult<!>> {
 ///         let num: i32 = num.base10_parse()?;
 ///         if num % 2 == 0 {
 ///             std::result::Result::Ok(Even(num))
@@ -137,13 +137,13 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 ///     }
 /// }
 ///
-/// fn is_even(num: LitInt) -> DiagnosticResult<Even> {
+/// fn is_even(num: LitInt) -> DiagnosticResult<i32> {
 ///     let even = Even::try_from(num)?;
-///     Ok(even)
+///     Ok(even.0)
 /// }
 ///
 /// assert!(is_even(parse_quote!(1)).is_error());
-/// assert!(is_even(parse_quote!(2)).is_ok());
+/// assert_eq!(is_even(parse_quote!(2)).unwrap(), 2);
 /// ```
 /// which is a little ugly, but will simplify to either `T` or an unwrapped `DiagnosticResult<T>`
 /// on `?`.
@@ -542,14 +542,18 @@ impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     }
 }
 
-/// If you inadvertently (or for "reasons") create a `Result<U,DiagnosticResult<T>>` then `?` will
-/// convert and `Err` to a simple `DiagnosticResult<T>::Err`.
-impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult<T>>>
+/// If you inadvertently (or for "reasons") create a `Result<_, DiagnosticResult<!>>` then `?` will
+/// convert an `Err` to a simple `DiagnosticResult<_>::Error`.
+impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult<!>>>
     for DiagnosticResult<T>
 {
-    fn from_residual(result: Result<std::convert::Infallible, DiagnosticResult<T>>) -> Self {
+    fn from_residual(result: Result<std::convert::Infallible, DiagnosticResult<!>>) -> Self {
         match result {
-            Result::Err(e) => e,
+            Result::Err(e) => match e.inner {
+                Error(diagnostic) => Self {
+                    inner: DiagnosticResult_::Error(diagnostic),
+                },
+            },
         }
     }
 }
