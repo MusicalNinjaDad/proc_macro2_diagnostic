@@ -1,5 +1,11 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.3.1](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.3.1)
+
+## Bugfixes
+
+- Quick fix for using ? on a `Result<T, DiagnosticResult<T>>` in a function which returns `DiagnosticResult<T>`. (This currently *panics* if a Result:Err contains an `Ok` or a `Warning`)
+
 ## [v0.3.0](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.3.0)
 
 ### New features

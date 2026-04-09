@@ -542,8 +542,8 @@ impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     }
 }
 
-/// If you inadvertently (or for "reasons") create a `Result<U,DiagnosticResult<T>>` then `?` will
-/// convert an `Err` to a simple `DiagnosticResult<U>::Error`.
+/// If you inadvertently (or for "reasons") create a `Result<T, DiagnosticResult<T>>` then `?` will
+/// convert an `Err` to a simple `DiagnosticResult<_>::Error`.
 ///
 /// ### Panics
 /// if a Result::Err contains an `Ok` or a `Warning`
