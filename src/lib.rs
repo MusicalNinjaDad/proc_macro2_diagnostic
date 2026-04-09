@@ -137,9 +137,9 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 ///     }
 /// }
 ///
-/// fn is_even(num: LitInt) -> DiagnosticResult<Even> {
+/// fn is_even(num: LitInt) -> DiagnosticResult<i32> {
 ///     let even = Even::try_from(num)?;
-///     Ok(even)
+///     Ok(even.0)
 /// }
 ///
 /// assert!(is_even(parse_quote!(1)).is_error());
