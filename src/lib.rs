@@ -143,7 +143,7 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// }
 ///
 /// assert!(is_even(parse_quote!(1)).is_error());
-/// assert!(is_even(parse_quote!(2)).is_ok());
+/// assert_eq!(is_even(parse_quote!(2)).unwrap(), 2);
 /// ```
 /// which is a little ugly, but will simplify to either `T` or an unwrapped `DiagnosticResult<T>`
 /// on `?`.
