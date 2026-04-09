@@ -1,10 +1,14 @@
 # proc_macro2_diagnostic changelog
 
-## [v0.3.1](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.3.1)
+## [v0.4.0](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.4.0)
+
+## Breaking changes
+
+- Inter-conversion from `Result` is only possible for `Result<_, DiagnosticResult<!>>` (was `Result<_, DiagnosticResult<T>>`, which was broken - see Bugfixes)
 
 ## Bugfixes
 
-- Quick fix for using `?` on a `Result<T, DiagnosticResult<T>>` in a function which returns `DiagnosticResult<T>`. (This currently *panics* if a `Result:Err` contains an `Ok` or a `Warning`)
+- Fix for using `?` on a `Result<T, DiagnosticResult<T>>` in a function which returns `DiagnosticResult<U>`.
 
 ## [v0.3.0](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.3.0)
 

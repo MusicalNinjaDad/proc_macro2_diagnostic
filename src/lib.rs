@@ -126,8 +126,8 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// struct Even(i32);
 ///
 /// impl TryFrom<LitInt> for Even {
-///     type Error = DiagnosticResult<Even>;
-///     fn try_from(num: LitInt) -> Result<Even, DiagnosticResult<Even>> {
+///     type Error = DiagnosticResult<!>;
+///     fn try_from(num: LitInt) -> Result<Even, DiagnosticResult<!>> {
 ///         let num: i32 = num.base10_parse()?;
 ///         if num % 2 == 0 {
 ///             std::result::Result::Ok(Even(num))
@@ -542,19 +542,14 @@ impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     }
 }
 
-/// If you inadvertently (or for "reasons") create a `Result<T, DiagnosticResult<T>>` then `?` will
+/// If you inadvertently (or for "reasons") create a `Result<_, DiagnosticResult<!>>` then `?` will
 /// convert an `Err` to a simple `DiagnosticResult<_>::Error`.
-///
-/// ### Panics
-/// if a Result::Err contains an `Ok` or a `Warning`
-impl<U, T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult<U>>>
+impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult<!>>>
     for DiagnosticResult<T>
 {
-    fn from_residual(result: Result<std::convert::Infallible, DiagnosticResult<U>>) -> Self {
+    fn from_residual(result: Result<std::convert::Infallible, DiagnosticResult<!>>) -> Self {
         match result {
             Result::Err(e) => match e.inner {
-                Ok_(_) => todo!("Don't store an Ok in a Result::Err (#35)"),
-                Warning(_, _) => todo!("Don't store a Warning in a Result::Err (#35)"),
                 Error(diagnostic) => Self {
                     inner: DiagnosticResult_::Error(diagnostic),
                 },
