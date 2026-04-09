@@ -544,12 +544,18 @@ impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
 
 /// If you inadvertently (or for "reasons") create a `Result<U,DiagnosticResult<T>>` then `?` will
 /// convert and `Err` to a simple `DiagnosticResult<T>::Err`.
-impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult<T>>>
+impl<U, T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult<U>>>
     for DiagnosticResult<T>
 {
-    fn from_residual(result: Result<std::convert::Infallible, DiagnosticResult<T>>) -> Self {
+    fn from_residual(result: Result<std::convert::Infallible, DiagnosticResult<U>>) -> Self {
         match result {
-            Result::Err(e) => e,
+            Result::Err(e) => match e.inner {
+                Ok_(_) => todo!(),
+                Warning(_, _) => todo!(),
+                Error(diagnostic) => Self {
+                    inner: DiagnosticResult_::Error(diagnostic),
+                },
+            },
         }
     }
 }
