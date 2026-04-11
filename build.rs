@@ -1,7 +1,5 @@
 use autocfg::AutoCfg;
 
-extern crate autocfg;
-
 fn main() {
     let ac = autocfg::new();
     stable_feature(&ac, "assert_matches");
