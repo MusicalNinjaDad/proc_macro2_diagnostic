@@ -2,6 +2,7 @@ name: Monthly stability checks
 
 on:
   workflow_dispatch:
+  workflow_call:
   pull_request:
   schedule:
     - cron: '0 3 6 * *'
@@ -15,7 +16,6 @@ env:
     RUSTC_BOOTSTRAP: 1
 
 jobs:
-  
 
   test:
     strategy:
@@ -25,11 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
-    - uses: actions-rust-lang/setup-rust-toolchain@v1
-      with:
-        toolchain: ${{ matrix.channel }}
+    - name: update rust
+      run: rustup update
     - name: Run tests
-      run: cargo test --no-fail-fast
+      run: cargo +${{ matrix.channel }} test --no-fail-fast
 
   lint:
     strategy:
@@ -39,12 +38,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
-    - uses: actions-rust-lang/setup-rust-toolchain@v1
-      with:
-        toolchain: ${{ matrix.channel }}
-        components: "clippy"
+    - name: update rust
+      run: rustup update && rustup component add --toolchain ${{ matrix.channel }} clippy
     - name: clippy
-      run: cargo clippy -- --deny warnings
+      run: cargo +${{ matrix.channel }} clippy -- --deny warnings
 
   report:
     if: ${{ always() }}
