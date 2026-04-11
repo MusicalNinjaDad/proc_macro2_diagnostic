@@ -603,10 +603,10 @@ impl From<DiagnosticStream> for TokenStream1 {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(not(stable_assert_matches))]
+    #[cfg(assert_matches_in_module)]
     use std::assert_matches::assert_matches;
 
-    #[cfg(stable_assert_matches)]
+    #[cfg(assert_matches_in_root)]
     use std::assert_matches;
 
     use super::*;
