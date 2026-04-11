@@ -10,7 +10,7 @@ homepage = "https://github.com/MusicalNinjaDad/proc_macro2_diagnostic"
 repository = "https://github.com/MusicalNinjaDad/proc_macro2_diagnostic"
 categories = ["development-tools"]
 license = "MIT"
-include = ["/src/", "/tests/"]
+exclude = [".github", ".devcontainer"]
 rust-version = "1.85.1"
 
 [lib]
