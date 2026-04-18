@@ -1,5 +1,11 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.3.1](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.3.1)
+
+### Bugfixes
+
+- Support nightly from 2026-04-16: fulfil new trait bound `Try::Residual: Residual<Self::Output>` [rustlang/rust commit 3efcdbc](https://github.com/rust-lang/rust/commit/3efcdbc43c0d8d00bbbd84989a920d9fb63f6066)
+
 ## [v0.3.0](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.3.0)
 
 ## Breaking changes
@@ -11,7 +17,7 @@
 - Use `?` on a `Result<T, syn::Error>` in a function that returns a `DiagnosticResult` (or a `Result<_, DiagnosticResult>`)
 - `add_help()` or `add_note()` to a `Result<T, syn::Error>`
 
-## Bugfixes
+### Bugfixes
 
 - Fix for using `?` on a `Result<T, DiagnosticResult<T>>` in a function which returns `DiagnosticResult<U>`.
 
