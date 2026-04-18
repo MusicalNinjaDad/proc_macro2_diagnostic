@@ -2,6 +2,7 @@
 #![feature(never_type)]
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
+#![feature(try_trait_v2_residual)]
 
 //! Provides a DiagnosticResult which makes it easy to implement multi-level compiler messages
 //! based upon the experimental [proc_macro::Diagnostic] and allows simple idiomatic error handling
@@ -540,6 +541,10 @@ impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
             },
         }
     }
+}
+
+impl<T> std::ops::Residual<T> for DiagnosticResult<!> {
+    type TryType = DiagnosticResult<T>;
 }
 
 /// If you inadvertently (or for "reasons") create a `Result<_, DiagnosticResult<!>>` then `?` will
