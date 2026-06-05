@@ -1,8 +1,8 @@
 #![cfg_attr(all(test, unstable_assert_matches), feature(assert_matches))]
-#![feature(never_type)]
-#![feature(proc_macro_diagnostic)]
-#![feature(try_trait_v2)]
-#![feature(try_trait_v2_residual)]
+#![cfg_attr(unstable_never_type, feature(never_type))]
+#![cfg_attr(unstable_proc_macro_diagnostic, feature(proc_macro_diagnostic))]
+#![cfg_attr(unstable_try_trait_v2, feature(try_trait_v2))]
+#![cfg_attr(unstable_try_trait_v2_residual, feature(try_trait_v2_residual))]
 
 //! Provides a DiagnosticResult which makes it easy to implement multi-level compiler messages
 //! based upon the experimental [proc_macro::Diagnostic] and allows simple idiomatic error handling
