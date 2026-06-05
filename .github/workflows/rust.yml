@@ -5,13 +5,13 @@ on:
     paths: 
     - "**.rs"
     - "Cargo.toml"
+    - "rust-toolchain.toml"
     - ".github/workflows/rust.yml"
   pull_request:
   workflow_call:
 
 env:
     CARGO_TERM_COLOR: always
-    RUSTC_BOOTSTRAP: 1
 
 jobs:
 
@@ -34,7 +34,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - name: Run tests
-      run: cargo test --no-fail-fast
+      run: cargo test
 
   lint:
     needs: skip_check
@@ -56,18 +56,20 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - name: fmt
-      run: cargo fmt --check  
+      run: cargo fmt --check
 
   msrv:
     needs: skip_check
     if: needs.skip_check.outputs.should_skip != 'true'
 
     runs-on: ubuntu-latest
+    env:
+      RUSTC_BOOTSTRAP: 1
 
     steps:
     - uses: actions/checkout@v6
     - name: install cargo-msrv
-      uses: taiki-e/install-action@v2.81.3
+      uses: taiki-e/install-action@v2.79.2
       with:
         tool: cargo-msrv
     - name: check MSRV
