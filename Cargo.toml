@@ -26,6 +26,7 @@ trybuild = "1.0.116"
 
 [build-dependencies]
 autocfg = "1.5.0"
+ninja-build_rs = "0.1.0"
 
 [workspace]
 members = ["tests/compilation"]

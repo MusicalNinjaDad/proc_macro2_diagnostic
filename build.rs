@@ -1,57 +1,14 @@
-use autocfg::AutoCfg;
+use ninja_build_rs::{
+    Result,
+    nightly::{AssertMatchesLocation, Nightly},
+};
 
-fn main() {
+fn main() -> Result<()> {
     let ac = autocfg::new();
-    stable_feature(&ac, "assert_matches");
-    assert_matches_in_module(&ac);
-    assert_matches_in_root(&ac);
-}
-
-fn stable_feature(ac: &AutoCfg, feature: &'static str) {
-    let cfg = format!("stable_{feature}");
-    let code = format!(
-        r#"
-    #![deny(stable_features)]
-    #![feature({feature})]
-    "#
-    );
-
-    autocfg::emit_possibility(&cfg);
-    if ac.probe_raw(&code).is_err() {
-        autocfg::emit(&cfg);
+    ac.emit_unstable_feature("assert_matches");
+    AssertMatchesLocation::emit_possibilities();
+    if let Some(location) = ac.assert_matches_location() {
+        autocfg::emit(&location.to_string())
     }
-}
-
-fn assert_matches_in_root(ac: &AutoCfg) {
-    let cfg = "assert_matches_in_root";
-    let code = r#"
-    #![allow(stable_features)]
-    #![feature(assert_matches)]
-    use std::assert_matches;
-
-    fn main() {
-        assert_matches!(Some(4), Some(_));
-    }
-        "#;
-    autocfg::emit_possibility(cfg);
-    if ac.probe_raw(code).is_ok() {
-        autocfg::emit(cfg);
-    }
-}
-
-fn assert_matches_in_module(ac: &AutoCfg) {
-    let cfg = "assert_matches_in_module";
-    let code = r#"
-    #![allow(stable_features)]
-    #![feature(assert_matches)]
-    use std::assert_matches::assert_matches;
-
-    fn main() {
-        assert_matches!(Some(4), Some(_));
-    }
-        "#;
-    autocfg::emit_possibility(cfg);
-    if ac.probe_raw(code).is_ok() {
-        autocfg::emit(cfg);
-    }
+    Ok(())
 }

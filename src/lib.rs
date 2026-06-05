@@ -1,4 +1,4 @@
-#![cfg_attr(not(stable_assert_matches), feature(assert_matches))]
+#![cfg_attr(all(test, unstable_assert_matches), feature(assert_matches))]
 #![feature(never_type)]
 #![feature(proc_macro_diagnostic)]
 #![feature(try_trait_v2)]
@@ -608,11 +608,11 @@ impl From<DiagnosticStream> for TokenStream1 {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(assert_matches_in_module)]
-    use std::assert_matches::assert_matches;
-
     #[cfg(assert_matches_in_root)]
     use std::assert_matches;
+
+    #[cfg(assert_matches_in_module)]
+    use std::assert_matches::assert_matches;
 
     use super::*;
 
