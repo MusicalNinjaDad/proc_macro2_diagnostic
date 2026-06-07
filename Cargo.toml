@@ -24,6 +24,9 @@ proc_macro2_diagnostic_fixture = { workspace = true }
 quote = "1.0.45"
 trybuild = "1.0.116"
 
+[features]
+test_no-diagnostic = []
+
 [build-dependencies]
 autocfg = "1.5.0"
 ninja-build_rs = {git = "https://github.com/MusicalNinjaDad/rust", branch = "proc_macro_diagnostic"}
