@@ -430,7 +430,8 @@ mod internal {
 
     /// Functions for the conversion to the proc_macro world.
     impl Diagnostic {
-        /// Convert to a [proc_macro::Diagnostic] and then emit.
+        /// Convert to a [`proc_macro::Diagnostic`] (or [`syn::Error`] if
+        /// [`proc_macro::Diagnostic`] is not available) and then emit.
         pub fn emit(mut self) {
             if !self.spans_call_site() {
                 self.add_note(
@@ -442,16 +443,37 @@ mod internal {
                 );
             };
             let spans = self.as_spans();
-            let mut pm_diagnostic =
-                proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
-            for child in self.children {
-                pm_diagnostic = child.add_to_parent(pm_diagnostic);
+            #[cfg(all(
+                has_proc_macro_diagnostic,
+                not(all(test, feature = "test_no-diagnostic"))
+            ))]
+            {
+                let mut pm_diagnostic =
+                    proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
+                for child in self.children {
+                    pm_diagnostic = child.add_to_parent(pm_diagnostic);
+                }
+                pm_diagnostic.emit();
             }
-            pm_diagnostic.emit();
+            #[cfg(not(all(
+                has_proc_macro_diagnostic,
+                not(all(test, feature = "test_no-diagnostic"))
+            )))]
+            {
+                // join spans to one
+                // new syn err
+                // combine syn err
+                // into compile error
+                todo!("emit as combined syn::Error")
+            }
         }
 
         /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
         /// Consumes both and returns a new [proc_macro::Diagnostic].
+        #[cfg(all(
+            has_proc_macro_diagnostic,
+            not(all(test, feature = "test_no-diagnostic"))
+        ))]
         fn add_to_parent(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
             let msg = self.message.clone();
             match self.level {
@@ -608,10 +630,10 @@ impl From<DiagnosticStream> for TokenStream1 {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(assert_matches_location="root")]
+    #[cfg(assert_matches_location = "root")]
     use std::assert_matches;
 
-    #[cfg(assert_matches_location="module")]
+    #[cfg(assert_matches_location = "module")]
     use std::assert_matches::assert_matches;
 
     use super::*;
