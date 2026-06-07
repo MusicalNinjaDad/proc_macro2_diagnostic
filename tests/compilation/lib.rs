@@ -1,3 +1,4 @@
+#![cfg(all(has_try_trait_v2, has_never_type))]
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use proc_macro2_diagnostic::prelude::*;

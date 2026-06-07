@@ -28,12 +28,15 @@ trybuild = "1.0.116"
 test_no-diagnostic = []
 
 [build-dependencies]
-autocfg = "1.5.0"
-ninja-build_rs = {git = "https://github.com/MusicalNinjaDad/rust", branch = "proc_macro_diagnostic"}
+autocfg = { workspace = true }
+ninja-build_rs= { workspace = true }
 
 [workspace]
 members = ["tests/compilation"]
 
 [workspace.dependencies]
+autocfg = "1.5.0"
+ninja-build_rs = {git = "https://github.com/MusicalNinjaDad/rust", branch = "proc_macro_diagnostic"}
+
 proc_macro2_diagnostic = { path = "." }
 proc_macro2_diagnostic_fixture = { path = "tests/compilation" }
