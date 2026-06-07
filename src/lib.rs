@@ -538,6 +538,7 @@ mod internal {
 /// - `Warning(val, diag)` -> `val` _and_ emits `diag` immediately
 /// - `Err(diag)` -> short-circuits with `Err(diag)` but _does NOT emit_ `diag` as this would lead to
 ///   repeat emissions
+#[cfg(has_never_type)]
 impl<T> std::ops::Try for DiagnosticResult<T> {
     type Output = T;
 
@@ -559,6 +560,7 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
     }
 }
 
+#[cfg(has_never_type)]
 impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     fn from_residual(residual: DiagnosticResult<!>) -> Self {
         match residual.inner {
@@ -569,12 +571,14 @@ impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     }
 }
 
+#[cfg(has_never_type)]
 impl<T> std::ops::Residual<T> for DiagnosticResult<!> {
     type TryType = DiagnosticResult<T>;
 }
 
 /// If you inadvertently (or for "reasons") create a `Result<_, DiagnosticResult<!>>` then `?` will
 /// convert an `Err` to a simple `DiagnosticResult<_>::Error`.
+#[cfg(has_never_type)]
 impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult<!>>>
     for DiagnosticResult<T>
 {
