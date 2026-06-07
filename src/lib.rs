@@ -490,6 +490,10 @@ mod internal {
         }
     }
 
+    #[cfg(all(
+        has_proc_macro_diagnostic,
+        not(all(test, feature = "test_no-diagnostic"))
+    ))]
     impl From<Level> for proc_macro::Level {
         fn from(level: Level) -> Self {
             match level {
