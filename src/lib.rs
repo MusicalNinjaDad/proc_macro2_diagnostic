@@ -671,12 +671,12 @@ mod tests {
         }
     }
 
-    // // TODO needs has_assert_matches_location
-    // #[test]
-    // fn ok_with_help() {
-    //     assert_matches!(
-    //         Ok(()).add_help(Span::call_site(), "help text").kind(),
-    //         DiagnosticResultKind::Ok
-    //     )
-    // }
+    #[test]
+    #[cfg(has_assert_matches)]
+    fn ok_with_help() {
+        assert_matches!(
+            Ok(()).add_help(Span::call_site(), "help text").kind(),
+            DiagnosticResultKind::Ok
+        )
+    }
 }
