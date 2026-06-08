@@ -338,6 +338,7 @@ impl<T> DiagnosticResult<T> {
 mod internal {
     use std::fmt::Display;
 
+    use super::TokenStream1;
     use proc_macro2::Span;
 
     #[derive(Debug, Clone)]
@@ -432,7 +433,7 @@ mod internal {
     impl Diagnostic {
         /// Convert to a [`proc_macro::Diagnostic`] (or [`syn::Error`] if
         /// [`proc_macro::Diagnostic`] is not available) and then emit.
-        pub fn emit(mut self) {
+        pub fn emit(mut self) -> TokenStream1 {
             if !self.spans_call_site() {
                 self.add_note(
                     Span::call_site(),
@@ -442,24 +443,38 @@ mod internal {
                     ),
                 );
             };
-            let spans = self.as_spans();
             #[cfg(has_proc_macro_diagnostic)]
             {
+                let spans = self.as_spans();
                 let mut pm_diagnostic =
                     proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
                 for child in self.children {
                     pm_diagnostic = child.add_to_parent(pm_diagnostic);
                 }
                 pm_diagnostic.emit();
+                TokenStream1::new()
             }
             #[cfg(not(has_proc_macro_diagnostic))]
             {
-                // join spans to one
-                // new syn err
-                // combine syn err
-                // into compile error
-                todo!("emit as combined syn::Error")
+                self.into_syn_err().into_compile_error().into()
             }
+        }
+
+        #[cfg(not(has_proc_macro_diagnostic))]
+        fn into_syn_err(self) -> syn::Error {
+            // take first span as all functions needed to join are nightly only
+            let span = self.spans.into_iter().next().expect("at least one span");
+            // new syn err
+            let message = if matches!(self.level, Level::Error) {
+                self.message
+            } else {
+                format!("{}: {}", self.level, self.message)
+            };
+            let mut err = syn::Error::new(span, message);
+            for child in self.children {
+                err.combine(child.into_syn_err());
+            }
+            err
         }
 
         /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
@@ -614,13 +629,10 @@ impl From<DiagnosticStream> for TokenStream1 {
         match result.inner {
             Ok_(t) => t.into(),
             Warning(t, warning) => {
-                warning.emit();
+                _ = warning.emit();
                 t.into()
             }
-            Error(error) => {
-                error.emit();
-                TokenStream1::new()
-            }
+            Error(error) => error.emit(),
         }
     }
 }
