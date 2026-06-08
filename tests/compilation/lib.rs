@@ -1,7 +1,6 @@
-#![cfg(all(has_try_trait_v2, has_never_type))]
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use proc_macro2_diagnostic::prelude::*;
+use proc_macro2_diagnostic::{ToTokens, prelude::*};
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
 
@@ -34,12 +33,12 @@ fn zst(name: &str) -> DiagnosticStream {
 
 #[proc_macro_attribute]
 pub fn error_and_help(_: TokenStream, _: TokenStream) -> TokenStream {
-    proc_macro::TokenStream::from(zst("helpme"))
+    zst("helpme").to_tokens()
 }
 
 #[proc_macro_attribute]
 pub fn error_no_help(_: TokenStream, _: TokenStream) -> TokenStream {
-    proc_macro::TokenStream::from(zst("fail"))
+    zst("fail").to_tokens()
 }
 
 #[proc_macro]
@@ -52,12 +51,12 @@ pub fn spanned_error(input: TokenStream) -> TokenStream {
             _ => None,
         })
         .unwrap();
-    error_spanned(first_item, "spanned error").into()
+    error_spanned(first_item, "spanned error").to_tokens()
 }
 
 #[proc_macro]
 pub fn no_error(_: TokenStream) -> TokenStream {
-    proc_macro::TokenStream::from(zst("bingo"))
+    zst("bingo").to_tokens()
 }
 
 #[proc_macro]
@@ -72,7 +71,7 @@ pub fn vec_span_warn(input: TokenStream) -> TokenStream {
         .collect();
     let ts = quote! { struct VecSpanWarn; };
     let result = warn_spanned(ts, spans, "warning with multiple spans");
-    proc_macro::TokenStream::from(result)
+    result.to_tokens()
 }
 
 #[proc_macro]
@@ -88,23 +87,23 @@ pub fn span_slice_help(input: TokenStream) -> TokenStream {
     let ts = quote! { struct SpanSliceHelp; };
     let result = warn_spanned(ts, Span::call_site(), "warning")
         .add_help(&spans[..], "help with multiple spans");
-    proc_macro::TokenStream::from(result)
+    result.to_tokens()
 }
 
 #[proc_macro]
 pub fn warn(_: TokenStream) -> TokenStream {
-    proc_macro::TokenStream::from(zst("warn"))
+    zst("warn").to_tokens()
 }
 
 #[proc_macro]
 pub fn helpful_warning(_: TokenStream) -> TokenStream {
-    proc_macro::TokenStream::from(zst("helpful_warning"))
+    zst("helpful_warning").to_tokens()
 }
 
 #[proc_macro]
 pub fn just_a_note(_: TokenStream) -> TokenStream {
     let my_struct = zst("Bob").add_note(Span::call_site(), "this is Bob");
-    my_struct.into()
+    my_struct.to_tokens()
 }
 
 #[proc_macro]
@@ -117,7 +116,7 @@ pub fn convert_syn_error(input: TokenStream) -> TokenStream {
         Ok(quote! {struct #ident;})
     }
 
-    make_struct(input.into()).into()
+    make_struct(input.into()).to_tokens()
 }
 
 #[proc_macro]
@@ -135,7 +134,7 @@ pub fn combined_syn_errors(input: TokenStream) -> TokenStream {
         Ok(quote! {struct #ident;})
     }
 
-    make_struct(input.into()).into()
+    make_struct(input.into()).to_tokens()
 }
 
 #[proc_macro]
@@ -149,5 +148,5 @@ pub fn extend_syn_error(input: TokenStream) -> TokenStream {
         Ok(quote! {struct #ident;})
     }
 
-    make_struct(input.into()).into()
+    make_struct(input.into()).to_tokens()
 }

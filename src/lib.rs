@@ -712,6 +712,41 @@ where
     }
 }
 
+pub trait ToTokens {
+    /// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] and/or convert
+    /// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty
+    /// [proc_macro::TokenStream] in case of [DiagnosticResult::Err].
+    fn to_tokens(self) -> TokenStream1;
+}
+
+#[cfg(has_try_trait_v2)]
+impl ToTokens for DiagnosticStream {
+    fn to_tokens(self) -> TokenStream1 {
+        match self.inner {
+            Ok_(t) => t.into(),
+            Warning(t, warning) => {
+                _ = warning.emit();
+                t.into()
+            }
+            Error(error) => error.emit(),
+        }
+    }
+}
+
+#[cfg(not(has_try_trait_v2))]
+impl ToTokens for DiagnosticStream {
+    fn to_tokens(self) -> TokenStream1 {
+        match self {
+            Self::Ok(t) => t.into(),
+            Self::Err(error) => error.into_compile_error().into(),
+        }
+    }
+}
+
+/// # WARNING - Deprecated
+///
+/// Prefer [ToTokens::to_tokens] which also works on stable.
+///
 /// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] and/or convert
 /// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty
 /// [proc_macro::TokenStream] in case of [DiagnosticResult::Err].
