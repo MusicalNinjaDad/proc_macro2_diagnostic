@@ -491,6 +491,7 @@ mod internal {
         }
 
         /// Get and convert the spans to use in a new [proc_macro::Diagnostic].
+        #[cfg(has_proc_macro_diagnostic)]
         fn as_spans(&self) -> Vec<proc_macro::Span> {
             self.spans.iter().map(|span| span.unwrap()).collect()
         }
