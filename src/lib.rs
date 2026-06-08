@@ -299,7 +299,7 @@ where
     ) -> DiagnosticResult<T> {
         match self {
             Result::Ok(val) => Ok(val),
-            Result::Err(e) => e.into().add_help(span, message),
+            Result::Err(e) => add_child(e.into(), span, message, Level::Help),
         }
     }
 
@@ -310,11 +310,21 @@ where
     ) -> DiagnosticResult<T> {
         match self {
             Result::Ok(val) => Ok(val),
-            Result::Err(e) => e.into().add_note(span, message),
+            Result::Err(e) => add_child(e.into(), span, message, Level::Note),
         }
     }
 }
 
+fn add_child<T, MSG: ToString, SPN: MultiSpan>(
+    parent: DiagnosticResult<T>,
+    span: SPN,
+    message: MSG,
+    level: Level,
+) -> DiagnosticResult<T>{
+    todo!()
+}
+
+#[cfg(has_try_trait_v2)]
 impl<T> DiagnosticResult<T> {
     /// Add a `Help` message to an existing warning or error at one or more `Span`s.
     ///
@@ -657,6 +667,7 @@ where
     }
 }
 
+#[cfg(has_try_trait_v2)]
 impl<T, E> From<E> for DiagnosticResult<T>
 where
     E: Into<Diagnostic> + std::error::Error,
@@ -671,6 +682,7 @@ where
 /// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] and/or convert
 /// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty
 /// [proc_macro::TokenStream] in case of [DiagnosticResult::Err].
+#[cfg(has_try_trait_v2)]
 impl From<DiagnosticStream> for TokenStream1 {
     fn from(result: DiagnosticStream) -> Self {
         match result.inner {
@@ -700,16 +712,19 @@ mod tests {
     }
 
     #[test]
+    #[cfg(has_try_trait_v2)]
     fn is_warning() {
         assert!(warn_spanned((), Span::call_site(), "foo").is_warning());
     }
 
     #[test]
+    #[cfg(has_try_trait_v2)]
     fn is_error() {
         assert!(error::<(), &str>("foo").is_error());
     }
 
     #[test]
+    #[cfg(has_try_trait_v2)]
     fn kind() {
         match Ok(()).kind() {
             DiagnosticResultKind::Ok => (),
@@ -720,6 +735,7 @@ mod tests {
 
     #[test]
     #[cfg(has_assert_matches)]
+    #[cfg(has_try_trait_v2)]
     fn ok_with_help() {
         assert_matches!(
             Ok(()).add_help(Span::call_site(), "help text").kind(),
