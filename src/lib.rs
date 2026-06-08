@@ -267,7 +267,7 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
 }
 
 pub trait AsDiagnostic<T> {
-    /// Convert to a DiagnosticResult and, _if an `Err`_,  add a `Help` message at one or more `Span`s.
+    /// Add a `Help` message to an existing _error_ or _warning_ at one or more `Span`s.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
@@ -277,7 +277,7 @@ pub trait AsDiagnostic<T> {
         message: MSG,
     ) -> DiagnosticResult<T>;
 
-    /// Convert to a DiagnosticResult and, _if an `Err`_, add a `Note` at one or more `Span`s.
+    /// Add a `Note` to an existing _error_ or _warning_ at one or more `Span`s.
     ///
     /// The message can be anything that implements `ToString` (incl. everything `Display`),
     /// this means you can use format_args!() to avoid intermediate allocations.
@@ -288,6 +288,7 @@ pub trait AsDiagnostic<T> {
     ) -> DiagnosticResult<T>;
 }
 
+/// Converts `Err` to `Error`.
 impl<T, E> AsDiagnostic<T> for Result<T, E>
 where
     E: Into<DiagnosticResult<T>>,
@@ -299,7 +300,7 @@ where
     ) -> DiagnosticResult<T> {
         match self {
             Result::Ok(val) => Ok(val),
-            Result::Err(e) => add_child(e.into(), span, message, Level::Help),
+            Result::Err(e) => e.into().add_help(span, message),
         }
     }
 
@@ -310,27 +311,17 @@ where
     ) -> DiagnosticResult<T> {
         match self {
             Result::Ok(val) => Ok(val),
-            Result::Err(e) => add_child(e.into(), span, message, Level::Note),
+            Result::Err(e) => e.into().add_help(span, message),
         }
     }
 }
 
-fn add_child<T, MSG: ToString, SPN: MultiSpan>(
-    parent: DiagnosticResult<T>,
-    span: SPN,
-    message: MSG,
-    level: Level,
-) -> DiagnosticResult<T>{
-    todo!()
-}
-
-#[cfg(has_try_trait_v2)]
-impl<T> DiagnosticResult<T> {
-    /// Add a `Help` message to an existing warning or error at one or more `Span`s.
-    ///
-    /// The message can be anything that implements `ToString` (incl. everything `Display`),
-    /// this means you can use format_args!() to avoid intermediate allocations.
-    pub fn add_help<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
+impl<T> AsDiagnostic<T> for DiagnosticResult<T> {
+    fn add_help<MSG: ToString, SPN: MultiSpan>(
+        mut self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T> {
         match self.inner {
             Ok_(_) => self,
             Warning(_, ref mut diagnostic) | Error(ref mut diagnostic) => {
@@ -340,11 +331,11 @@ impl<T> DiagnosticResult<T> {
         }
     }
 
-    /// Add a `Note` to an existing warning or error at one or more `Span`s.
-    ///
-    /// The message can be anything that implements `ToString` (incl. everything `Display`),
-    /// this means you can use format_args!() to avoid intermediate allocations.
-    pub fn add_note<MSG: ToString, SPN: MultiSpan>(mut self, span: SPN, message: MSG) -> Self {
+    fn add_note<MSG: ToString, SPN: MultiSpan>(
+        mut self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T> {
         match self.inner {
             Ok_(_) => self,
             Warning(_, ref mut diagnostic) | Error(ref mut diagnostic) => {
@@ -353,7 +344,10 @@ impl<T> DiagnosticResult<T> {
             }
         }
     }
+}
 
+#[cfg(has_try_trait_v2)]
+impl<T> DiagnosticResult<T> {
     pub fn is_ok(&self) -> bool {
         matches!(&self.kind(), DiagnosticResultKind::Ok)
     }
