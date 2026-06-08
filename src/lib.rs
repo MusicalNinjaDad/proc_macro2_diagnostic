@@ -443,10 +443,7 @@ mod internal {
                 );
             };
             let spans = self.as_spans();
-            #[cfg(all(
-                has_proc_macro_diagnostic,
-                not(all(test, feature = "test_no-diagnostic"))
-            ))]
+            #[cfg(has_proc_macro_diagnostic)]
             {
                 let mut pm_diagnostic =
                     proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
@@ -455,10 +452,7 @@ mod internal {
                 }
                 pm_diagnostic.emit();
             }
-            #[cfg(not(all(
-                has_proc_macro_diagnostic,
-                not(all(test, feature = "test_no-diagnostic"))
-            )))]
+            #[cfg(not(has_proc_macro_diagnostic))]
             {
                 // join spans to one
                 // new syn err
@@ -470,10 +464,7 @@ mod internal {
 
         /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
         /// Consumes both and returns a new [proc_macro::Diagnostic].
-        #[cfg(all(
-            has_proc_macro_diagnostic,
-            not(all(test, feature = "test_no-diagnostic"))
-        ))]
+        #[cfg(has_proc_macro_diagnostic)]
         fn add_to_parent(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
             let msg = self.message.clone();
             match self.level {
@@ -490,10 +481,7 @@ mod internal {
         }
     }
 
-    #[cfg(all(
-        has_proc_macro_diagnostic,
-        not(all(test, feature = "test_no-diagnostic"))
-    ))]
+    #[cfg(has_proc_macro_diagnostic)]
     impl From<Level> for proc_macro::Level {
         fn from(level: Level) -> Self {
             match level {
