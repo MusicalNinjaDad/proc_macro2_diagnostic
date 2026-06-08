@@ -312,7 +312,7 @@ where
     ) -> DiagnosticResult<T> {
         match self {
             Result::Ok(val) => Ok(val),
-            Result::Err(e) => e.into().add_help(span, message),
+            Result::Err(e) => e.into().add_note(span, message),
         }
     }
 }
