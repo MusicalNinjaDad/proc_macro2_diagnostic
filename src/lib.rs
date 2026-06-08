@@ -289,6 +289,7 @@ pub trait AsDiagnostic<T> {
 }
 
 /// Converts `Err` to `Error`.
+#[cfg(has_try_trait_v2)]
 impl<T, E> AsDiagnostic<T> for Result<T, E>
 where
     E: Into<DiagnosticResult<T>>,
@@ -316,6 +317,44 @@ where
     }
 }
 
+/// Converts `Err` to `Error`.
+#[cfg(not(has_try_trait_v2))]
+impl<T, E> AsDiagnostic<T> for Result<T, E>
+where
+    Diagnostic: From<E>,
+{
+    fn add_help<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T> {
+        match self {
+            Result::Ok(val) => Ok(val),
+            Result::Err(e) => {
+                let mut diag = Diagnostic::from(e);
+                diag.add_help(span, message);
+                Err(diag.into_syn_err())
+            }
+        }
+    }
+
+    fn add_note<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T> {
+        match self {
+            Result::Ok(val) => Ok(val),
+            Result::Err(e) => {
+                let mut diag = Diagnostic::from(e);
+                diag.add_note(span, message);
+                Err(diag.into_syn_err())
+            }
+        }
+    }
+}
+
+#[cfg(has_try_trait_v2)]
 impl<T> AsDiagnostic<T> for DiagnosticResult<T> {
     fn add_help<MSG: ToString, SPN: MultiSpan>(
         mut self,
