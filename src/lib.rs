@@ -73,7 +73,7 @@
 //!     │   └── proc-macro2
 //!     └── unicode-ident
 //! ```
-//! 
+//!
 //! TODO Documentation Notes for stable:
 //!   - Warnings ignored
 //!   - Only first span considered
@@ -108,6 +108,8 @@ pub mod prelude {
 ///
 /// All errors & warnings will be properly emitted by the compiler and nicely formatted.
 pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
+#[cfg(not(has_try_trait_v2))]
+pub type DiagnosticResult<T> = Result<T, syn::Error>;
 
 #[derive(Clone, Debug)]
 #[must_use = "this `DiagnosticResult` may be an error or a warning, which should be emitted"]
@@ -156,6 +158,7 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 ///
 /// ### Future changes
 /// - TODO: #11 Provide complete Result API
+#[cfg(has_try_trait_v2)]
 pub struct DiagnosticResult<T> {
     inner: DiagnosticResult_<T>,
 }
@@ -178,7 +181,14 @@ enum DiagnosticResult_<T> {
 /// Create an `Ok` result.
 #[expect(non_snake_case, reason = "same feel as a Result type alias")]
 pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
-    DiagnosticResult { inner: Ok_(val) }
+    #[cfg(has_try_trait_v2)]
+    {
+        DiagnosticResult { inner: Ok_(val) }
+    }
+    #[cfg(not(has_try_trait_v2))]
+    {
+        Result::Ok(val)
+    }
 }
 
 /// Create an error **spanning the macro call_site**
@@ -186,8 +196,16 @@ pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
 /// The message can be anything that implements `ToString` (incl. everything `Display`),
 /// this means you can use format_args!() to avoid intermediate allocations.
 pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
-    DiagnosticResult {
-        inner: Error(Diagnostic::new(Level::Error, Span::call_site(), message)),
+    let diagnostic = Diagnostic::new(Level::Error, Span::call_site(), message);
+    #[cfg(has_try_trait_v2)]
+    {
+        DiagnosticResult {
+            inner: Error(diagnostic),
+        }
+    }
+    #[cfg(not(has_try_trait_v2))]
+    {
+        Err(diagnostic.into_syn_err())
     }
 }
 
@@ -202,8 +220,16 @@ pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
     span: SPN,
     message: MSG,
 ) -> DiagnosticResult<T> {
-    DiagnosticResult {
-        inner: Error(Diagnostic::new(Level::Error, span, message)),
+    let diagnostic = Diagnostic::new(Level::Error, span, message);
+    #[cfg(has_try_trait_v2)]
+    {
+        DiagnosticResult {
+            inner: Error(diagnostic),
+        }
+    }
+    #[cfg(not(has_try_trait_v2))]
+    {
+        Err(diagnostic.into_syn_err())
     }
 }
 
@@ -217,11 +243,26 @@ pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
 /// unless you add one manually.
 pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     value: T,
+    #[allow(
+        unused_variables,
+        reason = "warnings ignored if try trait not available"
+    )]
     span: SPN,
+    #[allow(
+        unused_variables,
+        reason = "warnings ignored if try trait not available"
+    )]
     message: MSG,
 ) -> DiagnosticResult<T> {
-    DiagnosticResult {
-        inner: Warning(value, Diagnostic::new(Level::Warning, span, message)),
+    #[cfg(has_try_trait_v2)]
+    {
+        DiagnosticResult {
+            inner: Warning(value, Diagnostic::new(Level::Warning, span, message)),
+        }
+    }
+    #[cfg(not(has_try_trait_v2))]
+    {
+        Result::Ok(value)
     }
 }
 
@@ -465,8 +506,8 @@ mod internal {
             }
         }
 
-        #[cfg(not(has_proc_macro_diagnostic))]
-        fn into_syn_err(self) -> syn::Error {
+        #[cfg(any(not(has_proc_macro_diagnostic), not(has_try_trait_v2)))]
+        pub fn into_syn_err(self) -> syn::Error {
             // take first span as all functions needed to join are nightly only
             let span = self.spans.into_iter().next().expect("at least one span");
             // new syn err
