@@ -73,6 +73,11 @@
 //!     │   └── proc-macro2
 //!     └── unicode-ident
 //! ```
+//! 
+//! TODO Documentation Notes for stable:
+//!   - Warnings ignored
+//!   - Only first span considered
+//!   - All "note" & "help" additions are output as errors (e.g. "error: help: ...")
 
 use std::fmt::Debug;
 
