@@ -620,6 +620,7 @@ impl MultiSpan for Span {
     }
 }
 
+/// WARNING: Only first Span will be used if not has proc_macro_diagnostic
 impl MultiSpan for Vec<Span> {
     fn into_spans(self) -> Vec<Span> {
         self
