@@ -15,7 +15,7 @@ path = "lib.rs"
 proc-macro2 = "1.0.106"
 quote = "1.0.45"
 syn = "2.0.117"
-proc_macro2_diagnostic = { workspace = true }
+proc_macro2_diagnostic = { workspace = true, features = ["nightly_try", "stable_try"] }
 
 [dev-dependencies]
 
