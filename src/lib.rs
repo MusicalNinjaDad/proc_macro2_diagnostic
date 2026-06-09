@@ -95,6 +95,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
 
+#[cfg(has_try_trait_v2)]
 use crate::DiagnosticResult_::{Error, Ok as Ok_, Warning};
 pub use crate::internal::Diagnostic;
 use crate::internal::{Level, MultiSpan};
@@ -184,6 +185,7 @@ pub enum DiagnosticResultKind {
 #[derive(Clone, Debug)]
 /// Indirection via hidden inner to ensure invariant:
 ///   - Warning/Error must hold correct kind of Diagnostic
+#[cfg(has_try_trait_v2)]
 enum DiagnosticResult_<T> {
     Ok(T),
     Warning(T, Diagnostic),
