@@ -120,7 +120,7 @@ pub mod prelude {
 /// All errors & warnings will be properly emitted by the compiler and nicely formatted.
 pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 #[cfg(not(has_try_trait_v2))]
-pub type DiagnosticResult<T> = Result<T, syn::Error>;
+pub type DiagnosticResult<T> = Result<T, Diagnostic>;
 
 #[derive(Clone, Debug)]
 #[must_use = "this `DiagnosticResult` may be an error or a warning, which should be emitted"]
@@ -219,7 +219,7 @@ pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
     }
     #[cfg(not(has_try_trait_v2))]
     {
-        Err(diagnostic.into_syn_err())
+        Err(diagnostic)
     }
 }
 
@@ -243,7 +243,7 @@ pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
     }
     #[cfg(not(has_try_trait_v2))]
     {
-        Err(diagnostic.into_syn_err())
+        Err(diagnostic)
     }
 }
 
@@ -349,7 +349,7 @@ where
                 let mut diag = Diagnostic::from(e);
                 diag.add_help(span, message);
                 // TODO: has_diagnostic
-                Err(diag.into_syn_err())
+                Err(diag)
             }
         }
     }
@@ -365,7 +365,7 @@ where
                 let mut diag = Diagnostic::from(e);
                 diag.add_note(span, message);
                 // TODO: has_diagnostic
-                Err(diag.into_syn_err())
+                Err(diag)
             }
         }
     }
@@ -760,7 +760,10 @@ impl ToTokens for DiagnosticStream {
     fn to_tokens(self) -> TokenStream1 {
         match self {
             Self::Ok(t) => t.into(),
+            #[cfg(not(has_proc_macro_diagnostic))]
             Self::Err(error) => error.into_compile_error().into(),
+            #[cfg(has_proc_macro_diagnostic)]
+            Self::Err(error) => error.emit(),
         }
     }
 }
