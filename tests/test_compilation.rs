@@ -23,6 +23,5 @@ fn failures() {
 #[test]
 fn ok() {
     let t = TestCases::new();
-    #[cfg(has_proc_macro_diagnostic)]
     t.pass(examples("pass_*.rs"));
 }
