@@ -760,9 +760,6 @@ impl ToTokens for DiagnosticStream {
     fn to_tokens(self) -> TokenStream1 {
         match self {
             Self::Ok(t) => t.into(),
-            #[cfg(not(has_proc_macro_diagnostic))]
-            Self::Err(error) => error.emit(),
-            #[cfg(has_proc_macro_diagnostic)]
             Self::Err(error) => error.emit(),
         }
     }
