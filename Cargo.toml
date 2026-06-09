@@ -25,7 +25,8 @@ quote = "1.0.45"
 trybuild = "1.0.116"
 
 [features]
-test_no-diagnostic = []
+nightly_try = []
+stable_try = []
 
 [build-dependencies]
 autocfg = { workspace = true }

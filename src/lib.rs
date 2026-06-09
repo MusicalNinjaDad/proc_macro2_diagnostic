@@ -74,10 +74,19 @@
 //!     └── unicode-ident
 //! ```
 //!
-//! TODO Documentation Notes for stable:
+//! TODO Documentation Notes for stable (until diagnostics stabilised):
 //!   - Warnings ignored
 //!   - Only first span considered
 //!   - All "note" & "help" additions are output as errors (e.g. "error: help: ...")
+//!
+//! TODO Try features
+//!   - nightly_try: custom TryType with Warning as 1st class citizen. Improved ergonomics?
+//!     Will auto-disable if try not available - so need to gate yourself if downstream may be
+//!     stable or also enable stable_try - see warning below.
+//!   - stable_try: Result<T, Diagnostic>. Warnings packed into Error.
+//!   - enabling both is possible, but cannot rely on underlying Types of aliases DiagnosticStream
+//!     (& DiagnosticResult on stable).
+//!   - document using https://docs.rs/document-features/latest/document_features/
 
 use std::fmt::Debug;
 
