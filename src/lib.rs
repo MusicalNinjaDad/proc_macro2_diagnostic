@@ -761,7 +761,7 @@ impl ToTokens for DiagnosticStream {
         match self {
             Self::Ok(t) => t.into(),
             #[cfg(not(has_proc_macro_diagnostic))]
-            Self::Err(error) => error.into_compile_error().into(),
+            Self::Err(error) => error.into_syn_err().into_compile_error().into(),
             #[cfg(has_proc_macro_diagnostic)]
             Self::Err(error) => error.emit(),
         }
