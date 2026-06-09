@@ -294,6 +294,7 @@ pub trait AsDiagnostic<T> {
 #[cfg(has_try_trait_v2)]
 impl<T, E> AsDiagnostic<T> for Result<T, E>
 where
+    // TODO: Validate blanket impl availble where Diagnostic: From<E>
     E: Into<DiagnosticResult<T>>,
 {
     fn add_help<MSG: ToString, SPN: MultiSpan>(
@@ -335,6 +336,7 @@ where
             Result::Err(e) => {
                 let mut diag = Diagnostic::from(e);
                 diag.add_help(span, message);
+                // TODO: has_diagnostic
                 Err(diag.into_syn_err())
             }
         }
@@ -350,6 +352,7 @@ where
             Result::Err(e) => {
                 let mut diag = Diagnostic::from(e);
                 diag.add_note(span, message);
+                // TODO: has_diagnostic
                 Err(diag.into_syn_err())
             }
         }
@@ -388,11 +391,13 @@ impl<T> AsDiagnostic<T> for DiagnosticResult<T> {
 }
 
 #[cfg(has_try_trait_v2)]
+// TODO: use traits from try_v2
 impl<T> DiagnosticResult<T> {
     pub fn is_ok(&self) -> bool {
         matches!(&self.kind(), DiagnosticResultKind::Ok)
     }
 
+    // TODO: not has_diagnostic
     pub fn is_warning(&self) -> bool {
         matches!(&self.kind(), DiagnosticResultKind::Warning)
     }
@@ -426,6 +431,9 @@ impl<T> DiagnosticResult<T> {
     }
 }
 
+// TODO: make Diagnostic pub to allow Result<T, Diagnostic> for
+// has_diagnostic but not has_try_trait_v2 (and then use that for general not has_try)
+// with conversion via syn::Error on emit
 mod internal {
     use std::fmt::Display;
 
