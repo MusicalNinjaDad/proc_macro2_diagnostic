@@ -96,7 +96,8 @@ use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
 
 use crate::DiagnosticResult_::{Error, Ok as Ok_, Warning};
-use crate::internal::*;
+pub use crate::internal::Diagnostic;
+use crate::internal::{Level, MultiSpan};
 
 /// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
 pub mod prelude {
