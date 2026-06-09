@@ -110,7 +110,7 @@ pub mod prelude {
 /// implementation.
 ///
 /// ### Usage
-/// 1. Shorten your proc_macro to `my_proc_macro2_impl(input.into()).into()`
+/// 1. Shorten your proc_macro to `my_proc_macro2_impl(input.into()).to_tokens()`
 /// 2. Return a DiagnosticStream from `my_proc_macro2_impl(input: proc_macro2::Tokenstream) -> DiagnosticStream`
 /// 3. Use `Ok()`, `error` or `warn_spanned` within the function; return a `DiagnosticResult<_>`
 ///    from any supporting functions and handle it with `?`
