@@ -117,8 +117,6 @@ pub mod prelude {
 ///
 /// All errors & warnings will be properly emitted by the compiler and nicely formatted.
 pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
-#[cfg(not(has_try_trait_v2))]
-pub type DiagnosticResult<T> = Result<T, Diagnostic>;
 
 #[derive(Clone, Debug)]
 #[must_use = "this `DiagnosticResult` may be an error or a warning, which should be emitted"]
@@ -172,8 +170,12 @@ pub struct DiagnosticResult<T> {
     inner: DiagnosticResult_<T>,
 }
 
+#[cfg(not(has_try_trait_v2))]
+pub type DiagnosticResult<T> = Result<T, Diagnostic>;
+
 #[derive(Clone, Debug)]
 /// The type of top-level message contained in the DiagnosticResult
+#[cfg(has_try_trait_v2)]
 pub enum DiagnosticResultKind {
     Ok,
     Warning,
@@ -447,10 +449,10 @@ impl<T> DiagnosticResult<T> {
 ///
 /// 1:1 structure to match [proc_macro::Diagnostic]
 pub struct Diagnostic {
-    pub level: Level,
-    pub message: String,
-    pub spans: Vec<Span>,
-    pub children: Vec<Diagnostic>,
+    level: Level,
+    message: String,
+    spans: Vec<Span>,
+    children: Vec<Diagnostic>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -723,9 +725,9 @@ pub trait ToTokens {
     fn to_tokens(self) -> TokenStream1;
 }
 
-#[cfg(has_try_trait_v2)]
 impl ToTokens for DiagnosticStream {
     fn to_tokens(self) -> TokenStream1 {
+        #[cfg(has_try_trait_v2)]
         match self.inner {
             Ok_(t) => t.into(),
             Warning(t, warning) => {
@@ -734,12 +736,7 @@ impl ToTokens for DiagnosticStream {
             }
             Error(error) => error.emit(),
         }
-    }
-}
-
-#[cfg(not(has_try_trait_v2))]
-impl ToTokens for DiagnosticStream {
-    fn to_tokens(self) -> TokenStream1 {
+        #[cfg(not(has_try_trait_v2))]
         match self {
             Self::Ok(t) => t.into(),
             Self::Err(error) => error.emit(),
