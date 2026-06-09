@@ -172,6 +172,8 @@ pub enum DiagnosticResultKind {
 }
 
 #[derive(Clone, Debug)]
+/// Indirection via hidden inner to ensure invariant:
+///   - Warning/Error must hold correct kind of Diagnostic
 enum DiagnosticResult_<T> {
     Ok(T),
     Warning(T, Diagnostic),
