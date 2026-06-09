@@ -30,11 +30,25 @@ jobs:
     if: needs.skip_check.outputs.should_skip != 'true'
 
     runs-on: ubuntu-latest
-    
+
+    strategy:
+      matrix:
+        channel:
+          - "nightly"
+          - "stable"
+        test_flags: 
+          - ""
+          - "no_diagnostic"
+          - "no_try"
+          - "no_diagnostic:no_try"
+
+    env:
+      PROC_MACRO2_DIAGNOSTIC_TEST: ${{ matrix.test_flags }}
+  
     steps:
     - uses: actions/checkout@v6
     - name: Run tests
-      run: cargo test
+      run: cargo +${{ matrix.channel }} test
 
   lint:
     needs: skip_check
