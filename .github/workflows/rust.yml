@@ -78,7 +78,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
-    - run: rustup update
+    - run: rustup install
     - name: clippy
       run: cargo +${{ matrix.channel }} clippy -- --deny warnings
 
