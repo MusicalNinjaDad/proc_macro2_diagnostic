@@ -75,7 +75,7 @@
 //! ```
 //!
 //! TODO Documentation Notes for stable (until diagnostics stabilised):
-//!   - Warnings ignored
+//!   - Warnings CANNOT BE CREATED (or emitted)
 //!   - Only first span considered
 //!   - All "note" & "help" additions are output as errors (e.g. "error: help: ...")
 //!
