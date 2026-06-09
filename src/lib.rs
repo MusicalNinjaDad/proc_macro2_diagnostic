@@ -175,11 +175,31 @@ pub type DiagnosticResult<T> = Result<T, Diagnostic>;
 
 #[derive(Clone, Debug)]
 /// The type of top-level message contained in the DiagnosticResult
-#[cfg(has_try_trait_v2)]
 pub enum DiagnosticResultKind {
     Ok,
     Warning,
     Error,
+}
+
+pub trait DiagnosticKind {
+    /// The type of top-level message
+    fn kind(&self) -> DiagnosticResultKind;
+}
+
+impl<T> DiagnosticKind for DiagnosticResult<T> {
+    fn kind(&self) -> DiagnosticResultKind {
+        #[cfg(has_try_trait_v2)]
+        match self.inner {
+            DiagnosticResult_::Ok(_) => DiagnosticResultKind::Ok,
+            DiagnosticResult_::Warning(_, _) => DiagnosticResultKind::Warning,
+            DiagnosticResult_::Error(_) => DiagnosticResultKind::Error,
+        }
+        #[cfg(not(has_try_trait_v2))]
+        match self {
+            Result::Ok(_) => DiagnosticResultKind::Ok,
+            Result::Err(_) => DiagnosticResultKind::Error,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -798,7 +818,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(has_try_trait_v2)]
     fn kind() {
         match Ok(()).kind() {
             DiagnosticResultKind::Ok => (),
