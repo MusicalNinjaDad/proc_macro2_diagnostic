@@ -5,3 +5,11 @@ error: failed
   | ^^^^^^^^^^^^^^^^
   |
   = note: this error originates in the attribute macro `error_no_help` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: be careful
+  --> tests/compilation/examples/no_try/fail_warn.rs:10:1
+   |
+10 | warn!();
+   | ^^^^^^^
+   |
+   = note: this warning originates in the macro `warn` (in Nightly builds, run with -Z macro-backtrace for more info)

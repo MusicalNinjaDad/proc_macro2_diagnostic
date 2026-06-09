@@ -255,6 +255,8 @@ pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
 ///
 /// A note will be added to the warning when emitted, which highlights the original call site,
 /// unless you add one manually.
+///
+/// TODO: Warning immediately emitted if not try_trait_v2
 pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     value: T,
     #[allow(
@@ -268,14 +270,16 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     )]
     message: MSG,
 ) -> DiagnosticResult<T> {
+    let warning = Diagnostic::new(Level::Warning, span, message);
     #[cfg(has_try_trait_v2)]
     {
         DiagnosticResult {
-            inner: Warning(value, Diagnostic::new(Level::Warning, span, message)),
+            inner: Warning(value, warning),
         }
     }
     #[cfg(not(has_try_trait_v2))]
     {
+        warning.emit();
         Result::Ok(value)
     }
 }

@@ -5,3 +5,11 @@ error: failed
   | ^^^^^^^^^^^^^^^^
   |
   = note: this error originates in the attribute macro `error_no_help` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: warning
+  --> tests/compilation/examples/no_try/fail_span_slice_help.rs:10:1
+   |
+10 | span_slice_help!(help1 help2);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this warning originates in the macro `span_slice_help` (in Nightly builds, run with -Z macro-backtrace for more info)
