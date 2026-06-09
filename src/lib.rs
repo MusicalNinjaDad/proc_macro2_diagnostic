@@ -184,6 +184,8 @@ pub enum DiagnosticResultKind {
 pub trait DiagnosticKind {
     /// The type of top-level message
     fn kind(&self) -> DiagnosticResultKind;
+    fn is_warning(&self) -> bool;
+    fn is_error(&self) -> bool;
 }
 
 impl<T> DiagnosticKind for DiagnosticResult<T> {
@@ -199,6 +201,22 @@ impl<T> DiagnosticKind for DiagnosticResult<T> {
             Result::Ok(_) => DiagnosticResultKind::Ok,
             Result::Err(_) => DiagnosticResultKind::Error,
         }
+    }
+
+    fn is_warning(&self) -> bool {
+        #[cfg(has_try_trait_v2)]
+        {
+            matches!(&self.kind(), DiagnosticResultKind::Warning)
+        }
+        #[cfg(not(has_try_trait_v2))]
+        {
+            // Warnings cannot be carried alongside values without try_trait_v2
+            false
+        }
+    }
+
+    fn is_error(&self) -> bool {
+        matches!(&self.kind(), DiagnosticResultKind::Error)
     }
 }
 
@@ -806,13 +824,12 @@ mod tests {
     }
 
     #[test]
-    #[cfg(has_try_trait_v2)]
+    #[cfg(has_try_trait_v2)] // Cannot test without, warning would be emitted on construction.
     fn is_warning() {
         assert!(warn_spanned((), Span::call_site(), "foo").is_warning());
     }
 
     #[test]
-    #[cfg(has_try_trait_v2)]
     fn is_error() {
         assert!(error::<(), &str>("foo").is_error());
     }
@@ -828,7 +845,6 @@ mod tests {
 
     #[test]
     #[cfg(has_assert_matches)]
-    #[cfg(has_try_trait_v2)]
     fn ok_with_help() {
         assert_matches!(
             Ok(()).add_help(Span::call_site(), "help text").kind(),
