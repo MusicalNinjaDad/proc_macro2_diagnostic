@@ -36,12 +36,14 @@ jobs:
       matrix:
         channel:
           - "nightly"
-          - "stable"
         test_flags: 
           - ""
           - "no_diagnostic"
           - "no_try"
           - "no_diagnostic:no_try"
+        include:
+          - channel: "stable"
+            test_flags: ""
 
     env:
       PROC_MACRO2_DIAGNOSTIC_TEST: ${{ matrix.test_flags }}
@@ -57,10 +59,27 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        channel:
+          - "nightly"
+        test_flags: 
+          - ""
+          - "no_diagnostic"
+          - "no_try"
+          - "no_diagnostic:no_try"
+        include:
+          - channel: "stable"
+            test_flags: ""
+
+    env:
+      PROC_MACRO2_DIAGNOSTIC_TEST: ${{ matrix.test_flags }}
+
     steps:
     - uses: actions/checkout@v6
     - name: clippy
-      run: cargo clippy -- --deny warnings
+      run: cargo +${{ matrix.channel }} clippy -- --deny warnings
 
   fmt:
     needs: skip_check
