@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use trybuild::{self, TestCases};
 
-#[expect(clippy::no_effect)]
+#[allow(clippy::no_effect)]
 fn examples(path: &str) -> PathBuf {
     let mut examples = PathBuf::from("tests/compilation/examples");
     cfg_select! {
