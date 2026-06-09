@@ -88,7 +88,7 @@
 //!     (& DiagnosticResult on stable).
 //!   - document using https://docs.rs/document-features/latest/document_features/
 
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 extern crate proc_macro;
 
@@ -97,8 +97,6 @@ use proc_macro2::Span;
 
 #[cfg(has_try_trait_v2)]
 use crate::DiagnosticResult_::{Error, Ok as Ok_, Warning};
-pub use crate::internal::Diagnostic;
-use crate::internal::{Level, MultiSpan};
 
 /// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
 pub mod prelude {
@@ -443,208 +441,192 @@ impl<T> DiagnosticResult<T> {
     }
 }
 
-// TODO: make Diagnostic pub to allow Result<T, Diagnostic> for
-// has_diagnostic but not has_try_trait_v2 (and then use that for general not has_try)
-// with conversion via syn::Error on emit
-mod internal {
-    use std::fmt::Display;
+#[derive(Debug, Clone)]
+/// The internal Diagnostic stored within DiagnosticResult.
+/// Not (currently) designed for direct usage.
+///
+/// 1:1 structure to match [proc_macro::Diagnostic]
+pub struct Diagnostic {
+    pub level: Level,
+    pub message: String,
+    pub spans: Vec<Span>,
+    pub children: Vec<Diagnostic>,
+}
 
-    use super::TokenStream1;
-    use proc_macro2::Span;
+#[derive(Debug, Clone, Copy, PartialEq)]
+/// 1:1 match for [proc_macro::Level].
+pub enum Level {
+    Error,
+    Warning,
+    Note,
+    Help,
+}
 
-    #[derive(Debug, Clone)]
-    /// The internal Diagnostic stored within DiagnosticResult.
-    /// Not (currently) designed for direct usage.
-    ///
-    /// 1:1 structure to match [proc_macro::Diagnostic]
-    pub struct Diagnostic {
-        pub level: Level,
-        pub message: String,
-        pub spans: Vec<Span>,
-        pub children: Vec<Diagnostic>,
-    }
-
-    #[derive(Debug, Clone, Copy, PartialEq)]
-    /// 1:1 match for [proc_macro::Level].
-    pub enum Level {
-        Error,
-        Warning,
-        Note,
-        Help,
-    }
-
-    impl Display for Level {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Level::Error => write!(f, "error"),
-                Level::Warning => write!(f, "warning"),
-                Level::Note => write!(f, "note"),
-                Level::Help => write!(f, "help"),
-            }
+impl Display for Level {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Level::Error => write!(f, "error"),
+            Level::Warning => write!(f, "warning"),
+            Level::Note => write!(f, "note"),
+            Level::Help => write!(f, "help"),
         }
     }
+}
 
-    impl Diagnostic {
-        pub fn new<MSG: ToString, SPN: MultiSpan>(level: Level, span: SPN, message: MSG) -> Self {
-            Self {
-                level,
-                message: message.to_string(),
-                spans: span.into_spans(),
-                children: vec![],
-            }
-        }
-
-        pub fn push(&mut self, child: Diagnostic) {
-            self.children.push(child);
-        }
-
-        pub fn add_child<MSG: ToString, SPN: MultiSpan>(
-            &mut self,
-            level: Level,
-            span: SPN,
-            message: MSG,
-        ) {
-            self.children.push(Diagnostic::new(level, span, message));
-        }
-
-        pub fn add_help<MSG: ToString, SPN: MultiSpan>(&mut self, span: SPN, message: MSG) {
-            self.add_child(Level::Help, span, message);
-        }
-
-        pub fn add_note<MSG: ToString, SPN: MultiSpan>(&mut self, span: SPN, message: MSG) {
-            self.add_child(Level::Note, span, message);
-        }
-
-        /// Does any message _exactly_ span the call_site (not just across it)?
-        fn spans_call_site(&self) -> bool {
-            let call_site = Span::call_site();
-            let cs_file = call_site.local_file();
-            let cs_start = call_site.start();
-            let cs_end = call_site.end();
-            let is_call_site = |span: &Span| {
-                span.local_file() == cs_file && span.start() == cs_start && span.end() == cs_end
-            };
-
-            self.spans.iter().any(is_call_site)
-                || self.children.iter().any(Diagnostic::spans_call_site)
+impl Diagnostic {
+    fn new<MSG: ToString, SPN: MultiSpan>(level: Level, span: SPN, message: MSG) -> Self {
+        Self {
+            level,
+            message: message.to_string(),
+            spans: span.into_spans(),
+            children: vec![],
         }
     }
 
-    impl From<syn::Error> for Diagnostic {
-        fn from(error: syn::Error) -> Self {
-            let mut diagnostic = Diagnostic::new(Level::Error, error.span(), error.to_string());
-            for err in error.into_iter().skip(1) {
-                diagnostic.push(err.into());
-            }
-            diagnostic
-        }
+    fn push(&mut self, child: Diagnostic) {
+        self.children.push(child);
     }
 
-    /// Functions for the conversion to the proc_macro world.
-    impl Diagnostic {
-        /// Convert to a [`proc_macro::Diagnostic`] (or [`syn::Error`] if
-        /// [`proc_macro::Diagnostic`] is not available) and then emit.
-        pub fn emit(mut self) -> TokenStream1 {
-            if !self.spans_call_site() {
-                self.add_note(
-                    Span::call_site(),
-                    format!(
-                        "this {} originates from the macro invocation here",
-                        self.level
-                    ),
-                );
-            };
-            #[cfg(has_proc_macro_diagnostic)]
-            {
-                let spans = self.as_spans();
-                let mut pm_diagnostic =
-                    proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
-                for child in self.children {
-                    pm_diagnostic = child.add_to_parent(pm_diagnostic);
-                }
-                pm_diagnostic.emit();
-                TokenStream1::new()
-            }
-            #[cfg(not(has_proc_macro_diagnostic))]
-            {
-                self.into_syn_err().into_compile_error().into()
-            }
-        }
+    fn add_child<MSG: ToString, SPN: MultiSpan>(&mut self, level: Level, span: SPN, message: MSG) {
+        self.children.push(Diagnostic::new(level, span, message));
+    }
 
-        #[cfg(any(not(has_proc_macro_diagnostic), not(has_try_trait_v2)))]
-        pub fn into_syn_err(self) -> syn::Error {
-            // take first span as all functions needed to join are nightly only
-            let span = self.spans.into_iter().next().expect("at least one span");
-            // new syn err
-            let message = if matches!(self.level, Level::Error) {
-                self.message
-            } else {
-                format!("{}: {}", self.level, self.message)
-            };
-            let mut err = syn::Error::new(span, message);
+    fn add_help<MSG: ToString, SPN: MultiSpan>(&mut self, span: SPN, message: MSG) {
+        self.add_child(Level::Help, span, message);
+    }
+
+    fn add_note<MSG: ToString, SPN: MultiSpan>(&mut self, span: SPN, message: MSG) {
+        self.add_child(Level::Note, span, message);
+    }
+
+    /// Does any message _exactly_ span the call_site (not just across it)?
+    fn spans_call_site(&self) -> bool {
+        let call_site = Span::call_site();
+        let cs_file = call_site.local_file();
+        let cs_start = call_site.start();
+        let cs_end = call_site.end();
+        let is_call_site = |span: &Span| {
+            span.local_file() == cs_file && span.start() == cs_start && span.end() == cs_end
+        };
+
+        self.spans.iter().any(is_call_site) || self.children.iter().any(Diagnostic::spans_call_site)
+    }
+}
+
+impl From<syn::Error> for Diagnostic {
+    fn from(error: syn::Error) -> Self {
+        let mut diagnostic = Diagnostic::new(Level::Error, error.span(), error.to_string());
+        for err in error.into_iter().skip(1) {
+            diagnostic.push(err.into());
+        }
+        diagnostic
+    }
+}
+
+/// Functions for the conversion to the proc_macro world.
+impl Diagnostic {
+    /// Convert to a [`proc_macro::Diagnostic`] (or [`syn::Error`] if
+    /// [`proc_macro::Diagnostic`] is not available) and then emit.
+    pub fn emit(mut self) -> TokenStream1 {
+        if !self.spans_call_site() {
+            self.add_note(
+                Span::call_site(),
+                format!(
+                    "this {} originates from the macro invocation here",
+                    self.level
+                ),
+            );
+        };
+        #[cfg(has_proc_macro_diagnostic)]
+        {
+            let spans = self.as_spans();
+            let mut pm_diagnostic =
+                proc_macro::Diagnostic::spanned(spans, self.level.into(), self.message);
             for child in self.children {
-                err.combine(child.into_syn_err());
+                pm_diagnostic = child.add_to_parent(pm_diagnostic);
             }
-            err
+            pm_diagnostic.emit();
+            TokenStream1::new()
         }
-
-        /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
-        /// Consumes both and returns a new [proc_macro::Diagnostic].
-        #[cfg(has_proc_macro_diagnostic)]
-        fn add_to_parent(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
-            let msg = self.message.clone();
-            match self.level {
-                Level::Error => parent.span_error(self.as_spans(), msg),
-                Level::Warning => parent.span_warning(self.as_spans(), msg),
-                Level::Note => parent.span_note(self.as_spans(), msg),
-                Level::Help => parent.span_help(self.as_spans(), msg),
-            }
-        }
-
-        /// Get and convert the spans to use in a new [proc_macro::Diagnostic].
-        #[cfg(has_proc_macro_diagnostic)]
-        fn as_spans(&self) -> Vec<proc_macro::Span> {
-            self.spans.iter().map(|span| span.unwrap()).collect()
+        #[cfg(not(has_proc_macro_diagnostic))]
+        {
+            self.into_syn_err().into_compile_error().into()
         }
     }
 
+    #[cfg(any(not(has_proc_macro_diagnostic), not(has_try_trait_v2)))]
+    fn into_syn_err(self) -> syn::Error {
+        // take first span as all functions needed to join are nightly only
+        let span = self.spans.into_iter().next().expect("at least one span");
+        // new syn err
+        let message = if matches!(self.level, Level::Error) {
+            self.message
+        } else {
+            format!("{}: {}", self.level, self.message)
+        };
+        let mut err = syn::Error::new(span, message);
+        for child in self.children {
+            err.combine(child.into_syn_err());
+        }
+        err
+    }
+
+    /// Add this [Diagnostic] as the child of a [proc_macro::Diagnostic].
+    /// Consumes both and returns a new [proc_macro::Diagnostic].
     #[cfg(has_proc_macro_diagnostic)]
-    impl From<Level> for proc_macro::Level {
-        fn from(level: Level) -> Self {
-            match level {
-                Level::Error => Self::Error,
-                Level::Help => Self::Help,
-                Level::Note => Self::Note,
-                Level::Warning => Self::Warning,
-            }
+    fn add_to_parent(self, parent: proc_macro::Diagnostic) -> proc_macro::Diagnostic {
+        let msg = self.message.clone();
+        match self.level {
+            Level::Error => parent.span_error(self.as_spans(), msg),
+            Level::Warning => parent.span_warning(self.as_spans(), msg),
+            Level::Note => parent.span_note(self.as_spans(), msg),
+            Level::Help => parent.span_help(self.as_spans(), msg),
         }
     }
 
-    /// A helper trait for APIs that accept one or more `Span`s.
-    ///
-    /// This mirrors the behavior of [proc_macro::diagnostic::MultiSpan] and allows
-    /// callers to pass a `Span`, `Vec<Span>`, or `&[Span]` to supported APIs.
-    pub trait MultiSpan {
-        /// Consume `self` and convert into an owned `Vec<Span>`.
-        fn into_spans(self) -> Vec<Span>;
+    /// Get and convert the spans to use in a new [proc_macro::Diagnostic].
+    #[cfg(has_proc_macro_diagnostic)]
+    fn as_spans(&self) -> Vec<proc_macro::Span> {
+        self.spans.iter().map(|span| span.unwrap()).collect()
     }
+}
 
-    impl MultiSpan for Span {
-        fn into_spans(self) -> Vec<Span> {
-            vec![self]
+#[cfg(has_proc_macro_diagnostic)]
+impl From<Level> for proc_macro::Level {
+    fn from(level: Level) -> Self {
+        match level {
+            Level::Error => Self::Error,
+            Level::Help => Self::Help,
+            Level::Note => Self::Note,
+            Level::Warning => Self::Warning,
         }
     }
+}
 
-    impl MultiSpan for Vec<Span> {
-        fn into_spans(self) -> Vec<Span> {
-            self
-        }
+/// A helper trait for APIs that accept one or more `Span`s.
+///
+/// This mirrors the behavior of [proc_macro::diagnostic::MultiSpan] and allows
+/// callers to pass a `Span`, `Vec<Span>`, or `&[Span]` to supported APIs.
+pub trait MultiSpan {
+    /// Consume `self` and convert into an owned `Vec<Span>`.
+    fn into_spans(self) -> Vec<Span>;
+}
+
+impl MultiSpan for Span {
+    fn into_spans(self) -> Vec<Span> {
+        vec![self]
     }
+}
 
-    impl MultiSpan for &[Span] {
-        fn into_spans(self) -> Vec<Span> {
-            self.to_vec()
-        }
+impl MultiSpan for Vec<Span> {
+    fn into_spans(self) -> Vec<Span> {
+        self
+    }
+}
+
+impl MultiSpan for &[Span] {
+    fn into_spans(self) -> Vec<Span> {
+        self.to_vec()
     }
 }
 
