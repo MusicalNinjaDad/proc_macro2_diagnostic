@@ -101,6 +101,7 @@ use crate::DiagnosticResult_::{Error, Ok as Ok_, Warning};
 /// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
 pub mod prelude {
     pub use super::AsDiagnostic;
+    pub use super::DiagnosticKind;
     pub use super::DiagnosticResult;
     pub use super::DiagnosticStream;
     pub use super::{Ok, error, error_spanned, warn_spanned};
@@ -449,24 +450,6 @@ impl<T> AsDiagnostic<T> for DiagnosticResult<T> {
 impl<T> DiagnosticResult<T> {
     pub fn is_ok(&self) -> bool {
         matches!(&self.kind(), DiagnosticResultKind::Ok)
-    }
-
-    // TODO: not has_diagnostic
-    pub fn is_warning(&self) -> bool {
-        matches!(&self.kind(), DiagnosticResultKind::Warning)
-    }
-
-    pub fn is_error(&self) -> bool {
-        matches!(&self.kind(), DiagnosticResultKind::Error)
-    }
-
-    /// The type of top-level message
-    pub fn kind(&self) -> DiagnosticResultKind {
-        match self.inner {
-            DiagnosticResult_::Ok(_) => DiagnosticResultKind::Ok,
-            DiagnosticResult_::Warning(_, _) => DiagnosticResultKind::Warning,
-            DiagnosticResult_::Error(_) => DiagnosticResultKind::Error,
-        }
     }
 
     /// Return the Ok result or panic.
