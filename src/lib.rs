@@ -598,7 +598,7 @@ impl Diagnostic {
         }
     }
 
-    #[cfg(any(not(has_proc_macro_diagnostic), not(has_try_trait_v2)))]
+    #[cfg(not(has_proc_macro_diagnostic))]
     fn into_syn_err(self) -> syn::Error {
         // take first span as all functions needed to join are nightly only
         let span = self.spans.into_iter().next().expect("at least one span");
