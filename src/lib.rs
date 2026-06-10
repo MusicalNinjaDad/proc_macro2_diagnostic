@@ -3,7 +3,6 @@
 #![cfg_attr(unstable_proc_macro_diagnostic, feature(proc_macro_diagnostic))]
 #![cfg_attr(unstable_try_trait_v2, feature(try_trait_v2))]
 #![cfg_attr(unstable_try_trait_v2_residual, feature(try_trait_v2_residual))]
-
 #![doc = include_str!("../README.md")]
 
 use std::fmt::{Debug, Display};
@@ -48,7 +47,7 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// 1. Create a DiagnosticResult via `Ok()`, `error` or `warn_spanned`.
 /// 2. Treat the DiagnosticResult as you would any other Result type and unpack it with `?` at a
 ///    suitable point in your code.
-/// 
+///
 /// ### Stable / Nightly
 /// On stable this will be replaced by a type alias which provides limited ergonomics for `Warning`s.
 #[cfg(has_try_trait_v2)]
@@ -58,7 +57,7 @@ pub struct DiagnosticResult<T> {
 
 #[cfg(not(has_try_trait_v2))]
 /// This is a stable interface which provides limited ergonomics for `Warnings`
-/// 
+///
 /// # WARNING
 /// **DO NOT** expand this type alias, or your code will not compile on nightly, and will break at
 /// some point in the future when try_trait_v2 is stabilised.
