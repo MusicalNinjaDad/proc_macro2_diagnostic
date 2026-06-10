@@ -662,27 +662,6 @@ impl ToTokens for DiagnosticStream {
     }
 }
 
-/// # WARNING - Deprecated
-///
-/// Prefer [ToTokens::to_tokens] which also works on stable.
-///
-/// Convert the underlying [proc_macro2::TokenStream] to a [proc_macro::TokenStream] and/or convert
-/// and emit the contained [Diagnostic] as per [proc_macro::Diagnostic], returning an empty
-/// [proc_macro::TokenStream] in case of [DiagnosticResult::Err].
-#[cfg(has_try_trait_v2)]
-impl From<DiagnosticStream> for TokenStream1 {
-    fn from(result: DiagnosticStream) -> Self {
-        match result.inner {
-            Ok_(t) => t.into(),
-            Warning(t, warning) => {
-                _ = warning.emit();
-                t.into()
-            }
-            Error(error) => error.emit(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     #[cfg(assert_matches_location = "root")]
