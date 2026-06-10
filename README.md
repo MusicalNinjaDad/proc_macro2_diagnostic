@@ -2,7 +2,7 @@
 
 Provides a DiagnosticResult which makes it easy to implement multi-level compiler messages based upon the experimental `proc_macro::Diagnostic` and allows simple idiomatic error handling via `?` while ensuring errors & warnings are properly emitted by the compiler.
 
-Provides a "fire and forget" API which works (and is tested) on nightly, stable and will automatically provide new features on stable as they become available. We have taken great care to provide an experience which automaticall gets better as experimental features are stabilised and correctly and safely identifies the features available at build time.
+Provides a "fire and forget" API which works (and is tested) on nightly, stable and will automatically provide new features on stable as they become available. We have taken great care to provide an experience which automatically gets better as experimental features are stabilised and correctly and safely identifies the features available at build time.
 
 ## Note
 
@@ -10,7 +10,7 @@ This crate is deliberately opinionated and focuses on making it easy to create g
 
 - Top level diagnostics must be either an `Error` or a `Warning`
 - (Only) `Help` & `Note`s can be added as children
-- A note hightlighting the original call site will be added to any `Error`s / `Warning`s which do not span the call site themselves, or contain a child `Note` / `Help` which does.
+- A note highlighting the original call site will be added to any `Error`s / `Warning`s which do not span the call site themselves, or contain a child `Note` / `Help` which does.
 - Multi-level nesting is not possible
 - We do not provide an implementation of the full `proc_macro::Diagnostic` API. Other crates attempt to do this, if that is what you are after.
 
@@ -45,11 +45,11 @@ Given that this crate exposes an experimental API from std it works best on a ni
 
 ### Stability guarantees
 
-We recognise that you probably do not have control over the toolchain used to compile your crate, that is decided by someone downstream. This crate is therefore constructed in a way that will ensure your code *always* compiles, regardless of whether it is ultimately build on a nightly toolchain, the current stable toolchain, or a future stable toolchain where some of the above experimental features are stabilised.
+We recognise that you probably do not have control over the toolchain used to compile your crate, that is decided by someone downstream. This crate is therefore constructed in a way that will ensure your code *always* compiles, regardless of whether it is ultimately built on a nightly toolchain, the current stable toolchain, or a future stable toolchain where some of the above experimental features are stabilised.
 
 We do this by using the amazing [autocfg](https://crates.io/crates/autocfg/) to securely identify the availability of each feature we use as well as the need to enable an experimental feature flag.
 
-We run automated tests **every month** to ensure no fundamental changes affect this crate and test every PR against the current nightly, as well as the current equivalent beta & stable. We test & lint every push 4 times_ against current nightly, current stable and nightly with only try / diagnostic enabled.
+We run automated tests **every month** to ensure no fundamental changes affect this crate and test every PR against the current nightly, as well as the current equivalent beta & stable. We test & lint every push 4 times: against current nightly, current stable and nightly with only try / diagnostic enabled.
 
 We recommend you also test your crate on *at least* stable & nightly before publishing.
 
