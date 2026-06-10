@@ -5,13 +5,13 @@ on:
     paths: 
     - "**.rs"
     - "Cargo.toml"
+    - "rust-toolchain.toml"
     - ".github/workflows/rust.yml"
   pull_request:
   workflow_call:
 
 env:
     CARGO_TERM_COLOR: always
-    RUSTC_BOOTSTRAP: 1
 
 jobs:
 
@@ -30,11 +30,28 @@ jobs:
     if: needs.skip_check.outputs.should_skip != 'true'
 
     runs-on: ubuntu-latest
-    
+
+    strategy:
+      fail-fast: false
+      matrix:
+        channel:
+          - "nightly"
+        test_flags: 
+          - ""
+          - "no_diagnostic"
+          - "no_try"
+          - "no_diagnostic:no_try"
+        include:
+          - channel: "stable"
+            test_flags: ""
+
+    env:
+      PROC_MACRO2_DIAGNOSTIC_TEST: ${{ matrix.test_flags }}
+  
     steps:
     - uses: actions/checkout@v6
     - name: Run tests
-      run: cargo test --no-fail-fast
+      run: cargo +${{ matrix.channel }} test
 
   lint:
     needs: skip_check
@@ -42,10 +59,28 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        channel:
+          - "nightly"
+        test_flags: 
+          - ""
+          - "no_diagnostic"
+          - "no_try"
+          - "no_diagnostic:no_try"
+        include:
+          - channel: "stable"
+            test_flags: ""
+
+    env:
+      PROC_MACRO2_DIAGNOSTIC_TEST: ${{ matrix.test_flags }}
+
     steps:
     - uses: actions/checkout@v6
+    - run: rustup install
     - name: clippy
-      run: cargo clippy -- --deny warnings
+      run: cargo +${{ matrix.channel }} clippy -- --deny warnings
 
   fmt:
     needs: skip_check
@@ -56,13 +91,15 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - name: fmt
-      run: cargo fmt --check  
+      run: cargo fmt --check
 
   msrv:
     needs: skip_check
     if: needs.skip_check.outputs.should_skip != 'true'
 
     runs-on: ubuntu-latest
+    env:
+      RUSTC_BOOTSTRAP: 1
 
     steps:
     - uses: actions/checkout@v6

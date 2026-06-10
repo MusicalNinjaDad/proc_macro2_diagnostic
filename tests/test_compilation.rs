@@ -1,13 +1,28 @@
+use std::path::PathBuf;
+
 use trybuild::{self, TestCases};
+
+#[allow(clippy::no_effect)]
+fn examples(path: &str) -> PathBuf {
+    let mut examples = PathBuf::from("tests/compilation/examples");
+    cfg_select! {
+        not(any(has_proc_macro_diagnostic, has_try_trait_v2)) => examples.push("neither"),
+        not(has_proc_macro_diagnostic) => examples.push("no_diagnostic"),
+        not(has_try_trait_v2) => examples.push("no_try"),
+        _ => (),
+    };
+    examples.push(path);
+    examples
+}
 
 #[test]
 fn failures() {
     let t = TestCases::new();
-    t.compile_fail("tests/compilation/examples/fail_*.rs");
+    t.compile_fail(examples("fail_*.rs"));
 }
 
 #[test]
 fn ok() {
     let t = TestCases::new();
-    t.pass("tests/compilation/examples/pass_*.rs");
+    t.pass(examples("pass_*.rs"));
 }

@@ -18,3 +18,7 @@ syn = "2.0.117"
 proc_macro2_diagnostic = { workspace = true }
 
 [dev-dependencies]
+
+[build-dependencies]
+autocfg = { workspace = true }
+ninja-build_rs= { workspace = true }
