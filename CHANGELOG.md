@@ -1,5 +1,15 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.4.0](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.4.0)
+
+### Breaking changes
+
+- Removed `From<DiagnosticStream> for TokenStream`
+
+### New features
+
+- Consistent interface across nightly & stable. Automatic & future-proof identification & handling of experimental features.
+
 ## [v0.3.1](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.3.1)
 
 ### Bugfixes
