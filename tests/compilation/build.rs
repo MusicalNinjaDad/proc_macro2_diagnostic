@@ -11,9 +11,12 @@ fn main() -> Result<()> {
         ac.emit_unstable_feature("proc_macro_diagnostic");
     }
     if test_flags.contains("no_try") {
-        autocfg::emit_possibility("never_type");
-        autocfg::emit_possibility("try_trait_v2");
-        autocfg::emit_possibility("try_trait_v2_residual");
+        autocfg::emit_possibility("unstable_never_type");
+        autocfg::emit_possibility("has_never_type");
+        autocfg::emit_possibility("unstable_try_trait_v2");
+        autocfg::emit_possibility("has_try_trait_v2");
+        autocfg::emit_possibility("unstable_try_trait_v2_residual");
+        autocfg::emit_possibility("has_try_trait_v2_residual");
     } else {
         ac.emit_unstable_feature("never_type");
         ac.emit_unstable_feature("try_trait_v2");
