@@ -94,6 +94,8 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
+#[cfg(has_try_trait_v2)]
+use try_v2::{Extract, Transform};
 
 #[cfg(has_try_trait_v2)]
 use crate::DiagnosticResult_::{Error, Ok as Ok_, Warning};
@@ -137,6 +139,7 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// #![feature(never_type)]
 /// use proc_macro2_diagnostic::prelude::*;
 /// use syn::{parse_quote, LitInt};
+/// use try_v2::Extract;
 ///
 /// #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 /// struct Even(i32);
@@ -446,17 +449,19 @@ impl<T> AsDiagnostic<T> for DiagnosticResult<T> {
 }
 
 #[cfg(has_try_trait_v2)]
-// TODO: use traits from try_v2
 impl<T> DiagnosticResult<T> {
     pub fn is_ok(&self) -> bool {
         matches!(&self.kind(), DiagnosticResultKind::Ok)
     }
+}
 
+#[cfg(has_try_trait_v2)]
+impl<T> Transform<T> for DiagnosticResult<T> {}
+
+#[cfg(has_try_trait_v2)]
+impl<T: Debug> Extract<T> for DiagnosticResult<T> {
     /// Return the Ok result or panic.
-    pub fn unwrap(self) -> T
-    where
-        T: Debug,
-    {
+    fn unwrap(self) -> T {
         match self.inner {
             Ok_(t) => t,
             Warning(val, warning) => panic!(
