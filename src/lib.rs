@@ -445,6 +445,10 @@ impl From<syn::Error> for Diagnostic {
 impl Diagnostic {
     /// Convert to a [`proc_macro::Diagnostic`] (or [`syn::Error`] if
     /// [`proc_macro::Diagnostic`] is not available) and then emit.
+    /// 
+    /// Returns a [proc_macro::TokenStream] which *should be used*. On toolchains without
+    /// the experiment Diagnostic API, this will contain a compiler error, on toolchains
+    /// with the experimental API it will be empty.
     pub fn emit(mut self) -> TokenStream1 {
         if !self.spans_call_site() {
             self.add_note(
