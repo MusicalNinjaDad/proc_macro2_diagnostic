@@ -4,89 +4,7 @@
 #![cfg_attr(unstable_try_trait_v2, feature(try_trait_v2))]
 #![cfg_attr(unstable_try_trait_v2_residual, feature(try_trait_v2_residual))]
 
-//! Provides a DiagnosticResult which makes it easy to implement multi-level compiler messages
-//! based upon the experimental [proc_macro::Diagnostic] and allows simple idiomatic error handling
-//! via `?` while ensuring errors & warnings are properly emitted by the compiler.
-//!
-//! ## Note
-//!
-//! This crate is deliberately opinionated and focusses on making it easy to create good compiler
-//! errors and handle them easily:
-//!
-//! - Top level diagnostics must be either an `Error` or a `Warning`
-//! - (Only) `Help` & `Note`s can be added to a diagnostic
-//! - `Error`s always span the original call site - add a Help or Note to add information related
-//!   to other spans
-//! - `Warning`s will always finish with a `Note` detailing the original call site
-//! - Multi-level nesting is not possible
-//! - We do not provide a implementation of the full [proc_macro::Diagnostic] API. Other crates
-//!   attempt to do this, if that is what you are after.
-//!
-//! ## Stability & MSRV
-//!
-//! Given that this crate exposes an experimental API from std it makes use of experimental features
-//! which require a nightly toolchain.
-//!
-//! > 🔬 **Experimental Features**
-//! >
-//! > This crate makes use of the following experimental features:
-//! >
-//! > - [`#![feature(assert_matches)]`](https://github.com/rust-lang/rust/issues/82775) (stable since 2026-02-12)
-//! > - [`#![feature(never_type)]`](https://github.com/rust-lang/rust/issues/35121)
-//! > - [`#![feature(proc_macro_diagnostic)]`](https://github.com/rust-lang/rust/issues/54140)
-//! > - [`#![feature(try_trait_v2)]`](https://github.com/rust-lang/rust/issues/84277)
-//! >
-//! > This list includes any unstable features used by direct & transitive dependencies (currently, none).
-//! >
-//! > The authors consider all of the above features to be reliable and already well advanced in the
-//! > stabilisation process.
-//!
-//! You do not need to enable these in your own code, the list is for information only.
-//!
-//! ### Stability guarantees
-//!
-//! We run automated tests **every month** to ensure no fundamental changes affect this crate and
-//! test every PR against the current nightly, as well as the current equivalent beta & stable.
-//! If you find an issue before we do, please
-//! [raise an issue on github](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/issues).
-//!
-//! ### MSRV
-//!
-//! For those of you working with a pinned nightly (etc.) this crate supports every version of
-//! edition 2024 (rust 1.85.1 onwards, released as stable on 20225-03-18). We use
-//! [autocfg](https://crates.io/crates/autocfg/) to seamlessly handle features which have been
-//! stabilised since then.
-//!
-//! ### Dependencies
-//!
-//! We deliberately keep the dependency list short and pay attention to any transitive dependencies
-//! we bring in.
-//!
-//! Current dependency tree:
-//!
-//! ```text
-//! proc_macro2_diagnostic <- This crate
-//! └── proc-macro2
-//!     └── unicode-ident
-//! └── syn
-//!     ├── quote
-//!     │   └── proc-macro2
-//!     └── unicode-ident
-//! ```
-//!
-//! TODO Documentation Notes for stable (until diagnostics stabilised):
-//!   - Warnings CANNOT BE CREATED (or emitted)
-//!   - Only first span considered
-//!   - All "note" & "help" additions are output as errors (e.g. "error: help: ...")
-//!
-//! TODO Try features
-//!   - nightly_try: custom TryType with Warning as 1st class citizen. Improved ergonomics?
-//!     Will auto-disable if try not available - so need to gate yourself if downstream may be
-//!     stable or also enable stable_try - see warning below.
-//!   - stable_try: Result<T, Diagnostic>. Warnings packed into Error.
-//!   - enabling both is possible, but cannot rely on underlying Types of aliases DiagnosticStream
-//!     (& DiagnosticResult on stable).
-//!   - document using https://docs.rs/document-features/latest/document_features/
+#![doc = include_str!("../README.md")]
 
 use std::fmt::{Debug, Display};
 
@@ -130,48 +48,20 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 /// 1. Create a DiagnosticResult via `Ok()`, `error` or `warn_spanned`.
 /// 2. Treat the DiagnosticResult as you would any other Result type and unpack it with `?` at a
 ///    suitable point in your code.
-///
-/// ### Implementing [std::convert::TryFrom]
-/// As it is not possible to directly create a pure Diagnostic, use `Result<T, DiagnosticResult<T>>`
-/// ```
-/// #![feature(never_type)]
-/// use proc_macro2_diagnostic::prelude::*;
-/// use syn::{parse_quote, LitInt};
-///
-/// #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-/// struct Even(i32);
-///
-/// impl TryFrom<LitInt> for Even {
-///     type Error = DiagnosticResult<!>;
-///     fn try_from(num: LitInt) -> Result<Even, DiagnosticResult<!>> {
-///         let num: i32 = num.base10_parse()?;
-///         if num % 2 == 0 {
-///             std::result::Result::Ok(Even(num))
-///         } else {
-///             std::result::Result::Err(error("odd number"))
-///         }
-///     }
-/// }
-///
-/// fn is_even(num: LitInt) -> DiagnosticResult<i32> {
-///     let even = Even::try_from(num)?;
-///     Ok(even.0)
-/// }
-///
-/// assert!(is_even(parse_quote!(1)).is_error());
-/// assert_eq!(is_even(parse_quote!(2)).unwrap(), 2);
-/// ```
-/// which is a little ugly, but will simplify to either `T` or an unwrapped `DiagnosticResult<T>`
-/// on `?`.
-///
-/// ### Future changes
-/// - TODO: #11 Provide complete Result API
+/// 
+/// ### Stable / Nightly
+/// On stable this will be replaced by a type alias which provides limited ergonomics for `Warning`s.
 #[cfg(has_try_trait_v2)]
 pub struct DiagnosticResult<T> {
     inner: DiagnosticResult_<T>,
 }
 
 #[cfg(not(has_try_trait_v2))]
+/// This is a stable interface which provides limited ergonomics for `Warnings`
+/// 
+/// # WARNING
+/// **DO NOT** expand this type alias, or your code will not compile on nightly, and will break at
+/// some point in the future when try_trait_v2 is stabilised.
 pub type DiagnosticResult<T> = Result<T, Diagnostic>;
 
 #[derive(Clone, Debug)]
@@ -295,7 +185,9 @@ pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
 /// A note will be added to the warning when emitted, which highlights the original call site,
 /// unless you add one manually.
 ///
-/// TODO: Warning immediately emitted if not try_trait_v2
+/// # Stable / Nightly
+/// - Where try_trait_v2 is not available `Warnings` will be emitted immediately. See the readme
+///   for more information
 pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     value: T,
     #[allow(
