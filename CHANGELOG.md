@@ -1,5 +1,15 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.5.0](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.5.0)
+
+### Breaking changes
+
+- Removed `FromResidual<Result<!,DiagnosticResult<!>>` - this breaks invocations of `Option::ok_or(error())?;`, which was nightly-only: see below for improved syntax on both stable & nightly.
+
+### New features
+
+- Added `trait ToDiagnostic` and `impl ToDiagnostic for Option` allowing `Option::or_error()`, `Option::or_error_spanned()` & `Option::or_warn_spanned_with_default()` on both stable & nightly.
+
 ## [v0.4.0](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.4.0)
 
 ### Breaking changes

@@ -187,6 +187,11 @@ pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
 /// # Stable / Nightly
 /// - Where try_trait_v2 is not available `Warnings` will be emitted immediately. See the readme
 ///   for more information
+///
+/// # Considerations for testing, etc.
+/// - If code used outside a proc_macro context attempts to emit a Warning this will cause a
+///   runtime failure. Be careful when constructing Warnings in code which will be subject to
+///   unit tests or used in other contexts, e.g. in a build script.
 pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     value: T,
     #[allow(
@@ -214,6 +219,75 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     }
 }
 
+/// Provides methods to generate a diagnostic in "failure" case. This is a bit like
+/// `Option::ok_or()` but returns a `DiagnosticResult` and can be implemented on
+/// additional types.
+pub trait ToDiagnostic<T> {
+    /// Wrap the contained `T` in a `DiagnosticResult<T>` or create an error, spanning
+    /// the call site with the given `message`
+    fn or_error<MSG: ToString>(self, message: MSG) -> DiagnosticResult<T>;
+    /// Wrap the contained `T` in a `DiagnosticResult<T>` or create an error at the
+    /// given `span` with the given `message`
+    fn or_error_spanned<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T>;
+    /// Wrap the contained `T` in a `DiagnosticResult<T>` or create a warning, at the
+    /// given `span` with the given `message` and containing the default value for `T`
+    ///     
+    ///
+    /// A note will be added to the warning when emitted, which highlights the original call site,
+    /// unless you add one manually.
+    ///
+    /// # Stable / Nightly
+    /// - Where try_trait_v2 is not available `Warnings` will be emitted immediately. See the readme
+    ///   for more information
+    ///
+    /// # Considerations for testing, etc.
+    /// - If code used outside a proc_macro context attempts to emit a Warning this will cause a
+    ///   runtime failure. Be careful when contructing Warnings in code which will be subject to
+    ///   unit tests or used in other contexts, e.g. in a build script.
+    fn or_warn_spanned_with_default<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T>
+    where
+        T: Default;
+}
+
+impl<T> ToDiagnostic<T> for Option<T> {
+    fn or_error<MSG: ToString>(self, message: MSG) -> DiagnosticResult<T> {
+        self.or_error_spanned(Span::call_site(), message)
+    }
+
+    fn or_error_spanned<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T> {
+        match self {
+            Some(val) => Ok(val),
+            None => error_spanned(span, message),
+        }
+    }
+
+    fn or_warn_spanned_with_default<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T>
+    where
+        T: Default,
+    {
+        match self {
+            Some(val) => Ok(val),
+            None => warn_spanned(Default::default(), span, message),
+        }
+    }
+}
+
 pub trait AsDiagnostic<T> {
     /// Add a `Help` message to an existing _error_ or _warning_ at one or more `Span`s.
     ///
@@ -237,37 +311,6 @@ pub trait AsDiagnostic<T> {
 }
 
 /// Converts `Err` to `Error`.
-#[cfg(has_try_trait_v2)]
-impl<T, E> AsDiagnostic<T> for Result<T, E>
-where
-    // TODO: Validate blanket impl availble where Diagnostic: From<E>
-    E: Into<DiagnosticResult<T>>,
-{
-    fn add_help<MSG: ToString, SPN: MultiSpan>(
-        self,
-        span: SPN,
-        message: MSG,
-    ) -> DiagnosticResult<T> {
-        match self {
-            Result::Ok(val) => Ok(val),
-            Result::Err(e) => e.into().add_help(span, message),
-        }
-    }
-
-    fn add_note<MSG: ToString, SPN: MultiSpan>(
-        self,
-        span: SPN,
-        message: MSG,
-    ) -> DiagnosticResult<T> {
-        match self {
-            Result::Ok(val) => Ok(val),
-            Result::Err(e) => e.into().add_note(span, message),
-        }
-    }
-}
-
-/// Converts `Err` to `Error`.
-#[cfg(not(has_try_trait_v2))]
 impl<T, E> AsDiagnostic<T> for Result<T, E>
 where
     Diagnostic: From<E>,
@@ -280,10 +323,18 @@ where
         match self {
             Result::Ok(val) => Ok(val),
             Result::Err(e) => {
-                let mut diag = Diagnostic::from(e);
-                diag.add_help(span, message);
-                // TODO: has_diagnostic
-                Err(diag)
+                let mut diagnostic = Diagnostic::from(e);
+                diagnostic.add_help(span, message);
+                #[cfg(not(has_try_trait_v2))]
+                {
+                    Err(diagnostic)
+                }
+                #[cfg(has_try_trait_v2)]
+                {
+                    DiagnosticResult {
+                        inner: Error(diagnostic),
+                    }
+                }
             }
         }
     }
@@ -296,10 +347,18 @@ where
         match self {
             Result::Ok(val) => Ok(val),
             Result::Err(e) => {
-                let mut diag = Diagnostic::from(e);
-                diag.add_note(span, message);
-                // TODO: has_diagnostic
-                Err(diag)
+                let mut diagnostic = Diagnostic::from(e);
+                diagnostic.add_note(span, message);
+                #[cfg(not(has_try_trait_v2))]
+                {
+                    Err(diagnostic)
+                }
+                #[cfg(has_try_trait_v2)]
+                {
+                    DiagnosticResult {
+                        inner: Error(diagnostic),
+                    }
+                }
             }
         }
     }
@@ -596,23 +655,6 @@ impl<T> std::ops::Residual<T> for DiagnosticResult<!> {
     type TryType = DiagnosticResult<T>;
 }
 
-/// If you inadvertently (or for "reasons") create a `Result<_, DiagnosticResult<!>>` then `?` will
-/// convert an `Err` to a simple `DiagnosticResult<_>::Error`.
-#[cfg(all(has_never_type, has_try_trait_v2_residual))]
-impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult<!>>>
-    for DiagnosticResult<T>
-{
-    fn from_residual(result: Result<std::convert::Infallible, DiagnosticResult<!>>) -> Self {
-        match result {
-            Result::Err(e) => match e.inner {
-                Error(diagnostic) => Self {
-                    inner: DiagnosticResult_::Error(diagnostic),
-                },
-            },
-        }
-    }
-}
-
 #[cfg(has_try_trait_v2)]
 impl<T, E> std::ops::FromResidual<Result<std::convert::Infallible, E>> for DiagnosticResult<T>
 where
@@ -707,5 +749,14 @@ mod tests {
             Ok(()).add_help(Span::call_site(), "help text").kind(),
             DiagnosticResultKind::Ok
         )
+    }
+
+    #[test]
+    fn ok_or() {
+        fn five() -> DiagnosticResult<i32> {
+            let five = Some(5).or_error("oops!")?;
+            Ok(five)
+        }
+        assert_eq!(five().unwrap(), 5)
     }
 }
