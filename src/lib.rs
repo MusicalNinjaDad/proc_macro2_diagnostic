@@ -187,6 +187,11 @@ pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
 /// # Stable / Nightly
 /// - Where try_trait_v2 is not available `Warnings` will be emitted immediately. See the readme
 ///   for more information
+///
+/// # Considerations for testing, etc.
+/// - If code used outside a proc_macro context attempts to emit a Warning this will cause a
+///   runtime failure. Be careful when contructing Warnings in code which will be subject to
+///   unit tests or used in other contexts, e.g. in a build script.
 pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     value: T,
     #[allow(
@@ -229,12 +234,20 @@ pub trait ToDiagnostic<T> {
         message: MSG,
     ) -> DiagnosticResult<T>;
     /// Wrap the contained `T` in a `DiagnosticResult<T>` or create a warning, at the
-    /// given `the call site` with the given `message` and containing the default value for `T`
-    fn or_warn_with_default<MSG: ToString>(self, message: MSG) -> DiagnosticResult<T>
-    where
-        T: Default;
-    /// Wrap the contained `T` in a `DiagnosticResult<T>` or create a warning, at the
     /// given `span` with the given `message` and containing the default value for `T`
+    ///     
+    ///
+    /// A note will be added to the warning when emitted, which highlights the original call site,
+    /// unless you add one manually.
+    ///
+    /// # Stable / Nightly
+    /// - Where try_trait_v2 is not available `Warnings` will be emitted immediately. See the readme
+    ///   for more information
+    ///
+    /// # Considerations for testing, etc.
+    /// - If code used outside a proc_macro context attempts to emit a Warning this will cause a
+    ///   runtime failure. Be careful when contructing Warnings in code which will be subject to
+    ///   unit tests or used in other contexts, e.g. in a build script.
     fn or_warn_spanned_with_default<MSG: ToString, SPN: MultiSpan>(
         self,
         span: SPN,
@@ -258,13 +271,6 @@ impl<T> ToDiagnostic<T> for Option<T> {
             Some(val) => Ok(val),
             None => error_spanned(span, message),
         }
-    }
-
-    fn or_warn_with_default<MSG: ToString>(self, message: MSG) -> DiagnosticResult<T>
-    where
-        T: Default,
-    {
-        self.or_warn_spanned_with_default(Span::call_site(), message)
     }
 
     fn or_warn_spanned_with_default<MSG: ToString, SPN: MultiSpan>(
