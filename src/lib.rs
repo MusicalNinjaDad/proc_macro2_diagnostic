@@ -708,4 +708,13 @@ mod tests {
             DiagnosticResultKind::Ok
         )
     }
+
+    #[test]
+    fn ok_or() {
+        fn five() -> DiagnosticResult<i32> {
+            let five = Some(5).ok_or(error("oops!"))?;
+            Ok(five)
+        }
+        assert_eq!(five().unwrap(), 5)
+    }
 }
