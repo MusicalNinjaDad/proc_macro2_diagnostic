@@ -190,7 +190,7 @@ pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
 ///
 /// # Considerations for testing, etc.
 /// - If code used outside a proc_macro context attempts to emit a Warning this will cause a
-///   runtime failure. Be careful when contructing Warnings in code which will be subject to
+///   runtime failure. Be careful when constructing Warnings in code which will be subject to
 ///   unit tests or used in other contexts, e.g. in a build script.
 pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     value: T,
@@ -226,7 +226,7 @@ pub trait ToDiagnostic<T> {
     /// Wrap the contained `T` in a `DiagnosticResult<T>` or create an error, spanning
     /// the call site with the given `message`
     fn or_error<MSG: ToString>(self, message: MSG) -> DiagnosticResult<T>;
-    /// Wrap the contained `T` in a `DiagnosticResult<T>` or create an errorat the
+    /// Wrap the contained `T` in a `DiagnosticResult<T>` or create an error at the
     /// given `span` with the given `message`
     fn or_error_spanned<MSG: ToString, SPN: MultiSpan>(
         self,
