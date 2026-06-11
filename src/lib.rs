@@ -305,37 +305,6 @@ pub trait AsDiagnostic<T> {
 }
 
 /// Converts `Err` to `Error`.
-#[cfg(has_try_trait_v2)]
-impl<T, E> AsDiagnostic<T> for Result<T, E>
-where
-    // TODO: Validate blanket impl availble where Diagnostic: From<E>
-    E: Into<DiagnosticResult<T>>,
-{
-    fn add_help<MSG: ToString, SPN: MultiSpan>(
-        self,
-        span: SPN,
-        message: MSG,
-    ) -> DiagnosticResult<T> {
-        match self {
-            Result::Ok(val) => Ok(val),
-            Result::Err(e) => e.into().add_help(span, message),
-        }
-    }
-
-    fn add_note<MSG: ToString, SPN: MultiSpan>(
-        self,
-        span: SPN,
-        message: MSG,
-    ) -> DiagnosticResult<T> {
-        match self {
-            Result::Ok(val) => Ok(val),
-            Result::Err(e) => e.into().add_note(span, message),
-        }
-    }
-}
-
-/// Converts `Err` to `Error`.
-#[cfg(not(has_try_trait_v2))]
 impl<T, E> AsDiagnostic<T> for Result<T, E>
 where
     Diagnostic: From<E>,
@@ -348,10 +317,18 @@ where
         match self {
             Result::Ok(val) => Ok(val),
             Result::Err(e) => {
-                let mut diag = Diagnostic::from(e);
-                diag.add_help(span, message);
-                // TODO: has_diagnostic
-                Err(diag)
+                let mut diagnostic = Diagnostic::from(e);
+                diagnostic.add_help(span, message);
+                #[cfg(not(has_try_trait_v2))]
+                {
+                    Err(diagnostic)
+                }
+                #[cfg(has_try_trait_v2)]
+                {
+                    DiagnosticResult {
+                        inner: Error(diagnostic),
+                    }
+                }
             }
         }
     }
@@ -364,10 +341,18 @@ where
         match self {
             Result::Ok(val) => Ok(val),
             Result::Err(e) => {
-                let mut diag = Diagnostic::from(e);
-                diag.add_note(span, message);
-                // TODO: has_diagnostic
-                Err(diag)
+                let mut diagnostic = Diagnostic::from(e);
+                diagnostic.add_note(span, message);
+                #[cfg(not(has_try_trait_v2))]
+                {
+                    Err(diagnostic)
+                }
+                #[cfg(has_try_trait_v2)]
+                {
+                    DiagnosticResult {
+                        inner: Error(diagnostic),
+                    }
+                }
             }
         }
     }
