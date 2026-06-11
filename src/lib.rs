@@ -1,6 +1,7 @@
 #![cfg_attr(all(test, unstable_assert_matches), feature(assert_matches))]
 #![cfg_attr(unstable_never_type, feature(never_type))]
 #![cfg_attr(unstable_proc_macro_diagnostic, feature(proc_macro_diagnostic))]
+#![cfg_attr(unstable_iterator_try_collect, feature(iterator_try_collect))]
 #![cfg_attr(unstable_try_trait_v2, feature(try_trait_v2))]
 #![cfg_attr(unstable_try_trait_v2_residual, feature(try_trait_v2_residual))]
 #![doc = include_str!("../README.md")]
@@ -416,6 +417,16 @@ impl<T> AsDiagnostic<T> for DiagnosticResult<T> {
             Ok_(_) => None,
             Warning(_, diagnostic) | Error(diagnostic) => Some(diagnostic),
         }
+    }
+}
+
+#[cfg(all(has_try_trait_v2, has_iterator_try_collect))]
+impl<T, V> FromIterator<DiagnosticResult<T>> for DiagnosticResult<V>
+where
+    V: FromIterator<T>,
+{
+    fn from_iter<I: IntoIterator<Item = DiagnosticResult<T>>>(iter: I) -> Self {
+        iter.into_iter().try_collect()
     }
 }
 
