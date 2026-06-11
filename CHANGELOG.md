@@ -1,5 +1,12 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.6.1](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.6.1)
+
+### New features
+
+- Added traits `Transform` and `Extract` to (try_v2) `DiagnosticResult`
+- Impl'd `FromIterator` for `DiagnosticResult`
+
 ## [v0.6.0](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.6.0)
 
 ### Breaking changes
