@@ -1,6 +1,7 @@
 #![cfg_attr(all(test, unstable_assert_matches), feature(assert_matches))]
 #![cfg_attr(unstable_never_type, feature(never_type))]
 #![cfg_attr(unstable_proc_macro_diagnostic, feature(proc_macro_diagnostic))]
+#![cfg_attr(unstable_iterator_try_collect, feature(iterator_try_collect))]
 #![cfg_attr(unstable_try_trait_v2, feature(try_trait_v2))]
 #![cfg_attr(unstable_try_trait_v2_residual, feature(try_trait_v2_residual))]
 #![doc = include_str!("../README.md")]
@@ -11,6 +12,8 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
+#[cfg(has_try_trait_v2)]
+use try_v2::{Extract, Transform};
 
 #[cfg(has_try_trait_v2)]
 use crate::DiagnosticResult_::{Error, Ok as Ok_, Warning};
@@ -54,6 +57,11 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 pub struct DiagnosticResult<T> {
     inner: DiagnosticResult_<T>,
 }
+
+#[cfg(has_try_trait_v2)]
+impl<T> Transform<T> for DiagnosticResult<T> {}
+#[cfg(has_try_trait_v2)]
+impl<T> Extract<T> for DiagnosticResult<T> {}
 
 #[cfg(not(has_try_trait_v2))]
 /// This is a stable interface which provides limited ergonomics for `Warnings`
@@ -409,6 +417,16 @@ impl<T> AsDiagnostic<T> for DiagnosticResult<T> {
             Ok_(_) => None,
             Warning(_, diagnostic) | Error(diagnostic) => Some(diagnostic),
         }
+    }
+}
+
+#[cfg(all(has_try_trait_v2, has_iterator_try_collect))]
+impl<T, V> FromIterator<DiagnosticResult<T>> for DiagnosticResult<V>
+where
+    V: FromIterator<T>,
+{
+    fn from_iter<I: IntoIterator<Item = DiagnosticResult<T>>>(iter: I) -> Self {
+        iter.into_iter().try_collect()
     }
 }
 
@@ -804,5 +822,12 @@ mod tests {
         let small = 1;
         let n = Number::try_from(small).unwrap();
         assert_eq!(n.0, 1);
+    }
+
+    #[test]
+    fn map() {
+        let input = Some((0, 1));
+        let first = input.or_error("map").map(|tuple| tuple.0).unwrap();
+        assert_eq!(first, 0);
     }
 }
