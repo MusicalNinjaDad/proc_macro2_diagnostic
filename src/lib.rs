@@ -11,6 +11,8 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
+#[cfg(has_try_trait_v2)]
+use try_v2::{Extract, Transform};
 
 #[cfg(has_try_trait_v2)]
 use crate::DiagnosticResult_::{Error, Ok as Ok_, Warning};
@@ -54,6 +56,11 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 pub struct DiagnosticResult<T> {
     inner: DiagnosticResult_<T>,
 }
+
+#[cfg(has_try_trait_v2)]
+impl<T> Transform<T> for DiagnosticResult<T> {}
+#[cfg(has_try_trait_v2)]
+impl<T> Extract<T> for DiagnosticResult<T> {}
 
 #[cfg(not(has_try_trait_v2))]
 /// This is a stable interface which provides limited ergonomics for `Warnings`
