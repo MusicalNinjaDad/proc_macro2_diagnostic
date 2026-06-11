@@ -214,15 +214,70 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     }
 }
 
+/// Provides methods to generate a diagnostic in "failure" case. This is a bit like
+/// `Option::ok_or()` but returns a `DiagnosticResult` and can be implemented on
+/// additional types.
 pub trait ToDiagnostic<T> {
+    /// Wrap the contained `T` in a `DiagnosticResult<T>` or create an error, spanning
+    /// the call site with the given `message`
     fn or_error<MSG: ToString>(self, message: MSG) -> DiagnosticResult<T>;
+    /// Wrap the contained `T` in a `DiagnosticResult<T>` or create an errorat the
+    /// given `span` with the given `message`
+    fn or_error_spanned<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T>;
+    /// Wrap the contained `T` in a `DiagnosticResult<T>` or create a warning, at the
+    /// given `the call site` with the given `message` and containing the default value for `T`
+    fn or_warn_with_default<MSG: ToString>(self, message: MSG) -> DiagnosticResult<T>
+    where
+        T: Default;
+    /// Wrap the contained `T` in a `DiagnosticResult<T>` or create a warning, at the
+    /// given `span` with the given `message` and containing the default value for `T`
+    fn or_warn_spanned_with_default<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T>
+    where
+        T: Default;
 }
 
 impl<T> ToDiagnostic<T> for Option<T> {
     fn or_error<MSG: ToString>(self, message: MSG) -> DiagnosticResult<T> {
+        self.or_error_spanned(Span::call_site(), message)
+    }
+
+    fn or_error_spanned<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T> {
         match self {
             Some(val) => Ok(val),
-            None => error(message),
+            None => error_spanned(span, message),
+        }
+    }
+
+    fn or_warn_with_default<MSG: ToString>(self, message: MSG) -> DiagnosticResult<T>
+    where
+        T: Default,
+    {
+        self.or_warn_spanned_with_default(Span::call_site(), message)
+    }
+
+    fn or_warn_spanned_with_default<MSG: ToString, SPN: MultiSpan>(
+        self,
+        span: SPN,
+        message: MSG,
+    ) -> DiagnosticResult<T>
+    where
+        T: Default,
+    {
+        match self {
+            Some(val) => Ok(val),
+            None => warn_spanned(Default::default(), span, message),
         }
     }
 }
