@@ -596,23 +596,6 @@ impl<T> std::ops::Residual<T> for DiagnosticResult<!> {
     type TryType = DiagnosticResult<T>;
 }
 
-/// If you inadvertently (or for "reasons") create a `Result<_, DiagnosticResult<!>>` then `?` will
-/// convert an `Err` to a simple `DiagnosticResult<_>::Error`.
-#[cfg(all(has_never_type, has_try_trait_v2_residual))]
-impl<T> std::ops::FromResidual<Result<std::convert::Infallible, DiagnosticResult<!>>>
-    for DiagnosticResult<T>
-{
-    fn from_residual(result: Result<std::convert::Infallible, DiagnosticResult<!>>) -> Self {
-        match result {
-            Result::Err(e) => match e.inner {
-                Error(diagnostic) => Self {
-                    inner: DiagnosticResult_::Error(diagnostic),
-                },
-            },
-        }
-    }
-}
-
 #[cfg(has_try_trait_v2)]
 impl<T, E> std::ops::FromResidual<Result<std::convert::Infallible, E>> for DiagnosticResult<T>
 where
@@ -709,12 +692,12 @@ mod tests {
         )
     }
 
-    #[test]
-    fn ok_or() {
-        fn five() -> DiagnosticResult<i32> {
-            let five = Some(5).ok_or(error("oops!"))?;
-            Ok(five)
-        }
-        assert_eq!(five().unwrap(), 5)
-    }
+    // #[test]
+    // fn ok_or() {
+    //     fn five() -> DiagnosticResult<i32> {
+    //         let five = Some(5).ok_or(error("oops!"))?;
+    //         Ok(five)
+    //     }
+    //     assert_eq!(five().unwrap(), 5)
+    // }
 }
