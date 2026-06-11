@@ -308,6 +308,9 @@ pub trait AsDiagnostic<T> {
         span: SPN,
         message: MSG,
     ) -> DiagnosticResult<T>;
+
+    /// Get the underlying Diagnostic, if one exists.
+    fn diagnostic(self) -> Option<Diagnostic>;
 }
 
 /// Converts `Err` to `Error`.
@@ -362,6 +365,13 @@ where
             }
         }
     }
+
+    fn diagnostic(self) -> Option<Diagnostic> {
+        match self {
+            Self::Ok(_) => None,
+            Self::Err(e) => Some(Diagnostic::from(e)),
+        }
+    }
 }
 
 #[cfg(has_try_trait_v2)]
@@ -391,6 +401,13 @@ impl<T> AsDiagnostic<T> for DiagnosticResult<T> {
                 diagnostic.add_note(span, message);
                 self
             }
+        }
+    }
+
+    fn diagnostic(self) -> Option<Diagnostic> {
+        match self.inner {
+            Ok_(_) => None,
+            Warning(_, diagnostic) | Error(diagnostic) => Some(diagnostic),
         }
     }
 }
@@ -758,5 +775,34 @@ mod tests {
             Ok(five)
         }
         assert_eq!(five().unwrap(), 5)
+    }
+
+    #[derive(Debug)]
+    struct Number(i32);
+    impl TryFrom<i32> for Number {
+        type Error = Diagnostic;
+
+        fn try_from(value: i32) -> Result<Self, Self::Error> {
+            const MAX: i32 = i16::MAX as i32;
+            match value {
+                ..=MAX => Result::Ok(Number(value)),
+                _ => Result::Err(error::<Number, _>("oops").diagnostic().unwrap()),
+            }
+        }
+    }
+
+    #[test]
+    fn try_from_fail() {
+        let big = i32::MAX;
+        let diagnostic = Number::try_from(big).unwrap_err();
+        assert_eq!(diagnostic.level, Level::Error);
+        assert_eq!(diagnostic.message, "oops");
+    }
+
+    #[test]
+    fn try_from_pass() {
+        let small = 1;
+        let n = Number::try_from(small).unwrap();
+        assert_eq!(n.0, 1);
     }
 }
