@@ -812,4 +812,11 @@ mod tests {
         let n = Number::try_from(small).unwrap();
         assert_eq!(n.0, 1);
     }
+
+    #[test]
+    fn map() {
+        let input = Some((0, 1));
+        let first = input.or_error("map").map(|tuple| tuple.0).unwrap();
+        assert_eq!(first, 0);
+    }
 }
