@@ -1,5 +1,11 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.5.1](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.5.1)
+
+### New features
+
+- Added `diagnostic()` to `trait AsDiagnostic` allowing for `TryFrom` implementations to use `Error = Diagnostic`
+
 ## [v0.5.0](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.5.0)
 
 ### Breaking changes
