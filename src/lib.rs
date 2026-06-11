@@ -214,6 +214,19 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     }
 }
 
+pub trait ToDiagnostic<T> {
+    fn or_error<MSG: ToString>(self, message: MSG) -> DiagnosticResult<T>;
+}
+
+impl<T> ToDiagnostic<T> for Option<T> {
+    fn or_error<MSG: ToString>(self, message: MSG) -> DiagnosticResult<T> {
+        match self {
+            Some(val) => Ok(val),
+            None => error(message),
+        }
+    }
+}
+
 pub trait AsDiagnostic<T> {
     /// Add a `Help` message to an existing _error_ or _warning_ at one or more `Span`s.
     ///
@@ -692,12 +705,12 @@ mod tests {
         )
     }
 
-    // #[test]
-    // fn ok_or() {
-    //     fn five() -> DiagnosticResult<i32> {
-    //         let five = Some(5).ok_or(error("oops!"))?;
-    //         Ok(five)
-    //     }
-    //     assert_eq!(five().unwrap(), 5)
-    // }
+    #[test]
+    fn ok_or() {
+        fn five() -> DiagnosticResult<i32> {
+            let five = Some(5).or_error("oops!")?;
+            Ok(five)
+        }
+        assert_eq!(five().unwrap(), 5)
+    }
 }
