@@ -49,7 +49,7 @@ jobs:
       PROC_MACRO2_DIAGNOSTIC_TEST: ${{ matrix.test_flags }}
   
     steps:
-    - uses: actions/checkout@v6.0.2
+    - uses: actions/checkout@v6.0.3
     - name: Run tests
       run: cargo +${{ matrix.channel }} test
 
@@ -77,7 +77,7 @@ jobs:
       PROC_MACRO2_DIAGNOSTIC_TEST: ${{ matrix.test_flags }}
 
     steps:
-    - uses: actions/checkout@v6.0.2
+    - uses: actions/checkout@v6.0.3
     - run: rustup install
     - name: clippy
       run: cargo +${{ matrix.channel }} clippy -- --deny warnings
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v6.0.2
+    - uses: actions/checkout@v6.0.3
     - name: fmt
       run: cargo fmt --check
 
@@ -102,7 +102,7 @@ jobs:
       RUSTC_BOOTSTRAP: 1
 
     steps:
-    - uses: actions/checkout@v6.0.2
+    - uses: actions/checkout@v6.0.3
     - name: install cargo-msrv
       uses: taiki-e/install-action@v2.81.9
       with:
