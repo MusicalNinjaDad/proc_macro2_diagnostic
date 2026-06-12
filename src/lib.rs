@@ -13,7 +13,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
 #[cfg(has_try_trait_v2)]
-use try_v2::{Extract, Transform};
+use try_v2_traits::{Extract, Transform};
 
 #[cfg(has_try_trait_v2)]
 use crate::DiagnosticResult_::{Error, Ok as Ok_, Warning};

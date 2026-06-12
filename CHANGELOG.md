@@ -1,5 +1,11 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.6.3](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.6.2)
+
+### Bug fixes
+
+- Fully remove circular dependency risk via `try_v2_derive` by directly using `try_v2_traits`
+
 ## [v0.6.2](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.6.2)
 
 ### Bug fixes
