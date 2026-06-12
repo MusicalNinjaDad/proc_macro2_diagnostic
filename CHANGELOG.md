@@ -1,6 +1,6 @@
 # proc_macro2_diagnostic changelog
 
-## [v0.6.3](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.6.2)
+## [v0.6.3](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.6.3)
 
 ### Bug fixes
 
