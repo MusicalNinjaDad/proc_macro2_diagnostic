@@ -1,5 +1,12 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.6.6](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.6.6)
+
+### Bug fixes
+
+- Correct cfg gate for try_trait_v2 to always `#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]`
+- Update to ninja-build_rs v0.2.1 to fully respect cargo unstable.allow-features
+
 ## [v0.6.5](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.6.5)
 
 ### Bug fixes
