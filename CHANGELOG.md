@@ -1,5 +1,11 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.6.5](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.6.5)
+
+### Bug fixes
+
+- Update to try_v2_traits v0.9.0 to fully respect cargo unstable.allow-features
+
 ## [v0.6.4](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.6.4)
 
 ### Bug fixes
