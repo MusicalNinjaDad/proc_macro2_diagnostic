@@ -1,6 +1,6 @@
 [package]
 name = "proc_macro2_diagnostic"
-version = "0.6.5"
+version = "0.6.6"
 edition = "2024"
 readme = "README.md"
 description = "Use `Diagnostic` compiler messages from proc_macro2 code with Result-like syntax."
@@ -18,7 +18,7 @@ rust-version = "1.85.1"
 [dependencies]
 proc-macro2 = { version = "1.0.106", features = ["span-locations"] }
 syn = "2.0.118"
-try_v2_traits = "0.9.0"
+try_v2_traits = "0.9.1"
 
 [dev-dependencies]
 proc_macro2_diagnostic_fixture = { workspace = true }
@@ -33,7 +33,7 @@ ninja-build_rs = { workspace = true }
 members = ["tests/compilation"]
 
 [workspace.dependencies]
-ninja-build_rs = "0.2.0"
+ninja-build_rs = "0.2.1"
 autocfg = "1.5.0"
 
 proc_macro2_diagnostic = { path = "." }
