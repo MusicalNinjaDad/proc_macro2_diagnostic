@@ -33,7 +33,7 @@ ninja-build_rs = { workspace = true }
 members = ["tests/compilation"]
 
 [workspace.dependencies]
-ninja-build_rs = "0.1.2"
+ninja-build_rs = "0.2.0"
 autocfg = "1.5.0"
 
 proc_macro2_diagnostic = { path = "." }
