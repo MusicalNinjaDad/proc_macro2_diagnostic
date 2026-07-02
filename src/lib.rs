@@ -420,7 +420,12 @@ impl<T> AsDiagnostic<T> for DiagnosticResult<T> {
     }
 }
 
-#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type, has_iterator_try_collect))]
+#[cfg(all(
+    has_try_trait_v2,
+    has_try_trait_v2_residual,
+    has_never_type,
+    has_iterator_try_collect
+))]
 impl<T, V> FromIterator<DiagnosticResult<T>> for DiagnosticResult<V>
 where
     V: FromIterator<T>,
