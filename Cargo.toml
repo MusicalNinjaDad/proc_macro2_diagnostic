@@ -16,25 +16,30 @@ rust-version = "1.85.1"
 [lib]
 
 [dependencies]
-proc-macro2 = { version = "1.0.106", features = ["span-locations"] }
-syn = "2.0.118"
-try_v2_traits = "0.9.1"
+proc-macro2.workspace = true
+syn.workspace = true
+try_v2_traits.workspace = true
 
 [dev-dependencies]
-proc_macro2_diagnostic_fixture = { workspace = true }
-quote = "1.0.46"
-trybuild = "1.0.117"
+proc_macro2_diagnostic_fixture.workspace = true
+quote.workspace = true
+trybuild.workspace = true
 
 [build-dependencies]
-autocfg = { workspace = true }
-build_safely = { workspace = true }
+autocfg.workspace = true
+build_safely.workspace = true
 
 [workspace]
 members = ["tests/compilation"]
 
 [workspace.dependencies]
-build_safely = "0.5.0"
 autocfg = "1.5.0"
+build_safely = "0.5.0"
+proc-macro2 = { version = "1.0.106", features = ["span-locations"] }
+quote = "1.0.46"
+syn = "2.0.118"
+try_v2_traits = "0.10.0"
+trybuild = "1.0.117"
 
 proc_macro2_diagnostic = { path = "." }
 proc_macro2_diagnostic_fixture = { path = "tests/compilation" }
