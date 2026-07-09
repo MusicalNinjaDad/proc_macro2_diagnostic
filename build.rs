@@ -1,7 +1,7 @@
 use build_safely::prelude::*;
 
 fn main() -> Result<()> {
-    let mut ac = autocfg::new();
+    let mut ac = AutoCfg::new()?;
     ac.set_edition(Some("2024".to_string()));
 
     let allowed_features = cargo_allowed_features()?;
