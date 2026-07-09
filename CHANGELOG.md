@@ -1,5 +1,16 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.7.0]
+
+### Breaking changes
+
+- Upgrade to `build_safely` v0.5.1 - changed override variable
+
+### Bug fixes
+
+- Consistently use full feature bundle for cfgs related to try_traits
+- Simplify build script
+
 ## [v0.6.6](https://github.com/MusicalNinjaDad/proc_macro2_diagnostic/tree/v0.6.6)
 
 ### Bug fixes
