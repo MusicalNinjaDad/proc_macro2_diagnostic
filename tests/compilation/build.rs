@@ -1,20 +1,16 @@
-use ninja_build_rs::{
-    Result,
-    nightly::{Nightly, cargo_allowed_features},
-    split_var,
-};
+use build_safely::prelude::*;
 
 fn main() -> Result<()> {
     let ac = autocfg::new();
     let allowed_features = cargo_allowed_features()?;
 
-    ac.emit_unstable_feature("assert_matches", &allowed_features);
+    ac.emit_unstable_feature(assert_matches, &allowed_features);
     let test_flags = split_var("PROC_MACRO2_DIAGNOSTIC_TEST").unwrap_or_default();
     if test_flags.contains("no_diagnostic") {
         autocfg::emit_possibility("unstable_proc_macro_diagnostic");
         autocfg::emit_possibility("has_proc_macro_diagnostic");
     } else {
-        ac.emit_unstable_feature("proc_macro_diagnostic", &allowed_features);
+        ac.emit_unstable_feature(proc_macro_diagnostic, &allowed_features);
     }
     if test_flags.contains("no_try") {
         autocfg::emit_possibility("unstable_never_type");
@@ -24,9 +20,9 @@ fn main() -> Result<()> {
         autocfg::emit_possibility("unstable_try_trait_v2_residual");
         autocfg::emit_possibility("has_try_trait_v2_residual");
     } else {
-        ac.emit_unstable_feature("never_type", &allowed_features);
-        ac.emit_unstable_feature("try_trait_v2", &allowed_features);
-        ac.emit_unstable_feature("try_trait_v2_residual", &allowed_features);
+        ac.emit_unstable_feature(never_type, &allowed_features);
+        ac.emit_unstable_feature(try_trait_v2, &allowed_features);
+        ac.emit_unstable_feature(try_trait_v2_residual, &allowed_features);
     }
     Ok(())
 }

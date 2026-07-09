@@ -21,4 +21,4 @@ proc_macro2_diagnostic = { workspace = true }
 
 [build-dependencies]
 autocfg = { workspace = true }
-ninja-build_rs= { workspace = true }
+build_safely = { workspace = true }
