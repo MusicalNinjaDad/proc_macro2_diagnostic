@@ -34,15 +34,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channel:
-          - "nightly"
-        allow-features:
-          - "[\"proc_macro_span\",\"try_trait_v2\",\"never_type\",\"try_trait_v2_residual\",\"iterator_try_collect\"]"
-          - "[\"proc_macro_span\",\"proc_macro_diagnostic\"]"
-          - "" # all
         include:
           - channel: "stable"
             allow-features: ""
+            suite: "examples/neither/fail"
+          - channel: "nightly"
+            allow-features: "[\"proc_macro_span\",\"try_trait_v2\",\"never_type\",\"try_trait_v2_residual\",\"iterator_try_collect\"]"
+            suite: "examples/no_diagnostic/fail"
+          - channel: "nightly"
+            allow-features: "[\"proc_macro_span\",\"proc_macro_diagnostic\"]"
+            suite: "examples/no_try/fail"
+          - channel: "nightly"
+            allow-features: "" # all
+            suite: "examples/fail"
   
     steps:
     - uses: actions/checkout@v7.0.0
@@ -50,7 +54,7 @@ jobs:
       if: ${{ matrix.allow-features }}
       run: echo 'unstable.allow-features = ${{ matrix.allow-features }}' > .cargo/config.toml
     - name: Run tests
-      run: cargo +${{ matrix.channel }} test
+      run: cargo +${{ matrix.channel }} test | grep "${{ matrix.suite }}"
 
   lint:
     needs: skip_check
@@ -61,15 +65,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        channel:
-          - "nightly"
-        allow-features:
-          - "[\"proc_macro_span\",\"try_trait_v2\",\"never_type\",\"try_trait_v2_residual\",\"iterator_try_collect\"]"
-          - "[\"proc_macro_span\",\"proc_macro_diagnostic\"]"
-          - "" # all
         include:
           - channel: "stable"
             allow-features: ""
+          - channel: "nightly"
+            allow-features: "[\"proc_macro_span\",\"try_trait_v2\",\"never_type\",\"try_trait_v2_residual\",\"iterator_try_collect\"]"
+          - channel: "nightly"
+            allow-features: "[\"proc_macro_span\",\"proc_macro_diagnostic\"]"
+          - channel: "nightly"
+            allow-features: "" # all
 
     steps:
     - uses: actions/checkout@v7.0.0
