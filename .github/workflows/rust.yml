@@ -37,7 +37,7 @@ jobs:
         channel:
           - "nightly"
         allow-features:
-          - "[\"proc_macro_span\",\"try_trait_v2\",\"never_type\",\"try_trait_v2_residual\"]"
+          - "[\"proc_macro_span\",\"try_trait_v2\",\"never_type\",\"try_trait_v2_residual\",\"iterator_try_collect\"]"
           - "[\"proc_macro_span\",\"proc_macro_diagnostic\"]"
           - "" # all
         include:
