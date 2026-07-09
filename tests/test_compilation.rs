@@ -6,9 +6,9 @@ use trybuild::{self, TestCases};
 fn examples(path: &str) -> PathBuf {
     let mut examples = PathBuf::from("tests/compilation/examples");
     cfg_select! {
-        not(any(has_proc_macro_diagnostic, has_try_trait_v2)) => examples.push("neither"),
+        not(any(has_proc_macro_diagnostic, has_try_bundle)) => examples.push("neither"),
         not(has_proc_macro_diagnostic) => examples.push("no_diagnostic"),
-        not(has_try_trait_v2) => examples.push("no_try"),
+        not(has_try_bundle) => examples.push("no_try"),
         _ => (),
     };
     examples.push(path);

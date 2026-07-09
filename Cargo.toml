@@ -1,6 +1,6 @@
 [package]
 name = "proc_macro2_diagnostic"
-version = "0.6.6"
+version = "0.7.0"
 edition = "2024"
 readme = "README.md"
 description = "Use `Diagnostic` compiler messages from proc_macro2 code with Result-like syntax."
@@ -11,30 +11,33 @@ repository = "https://github.com/MusicalNinjaDad/proc_macro2_diagnostic"
 categories = ["development-tools"]
 license = "MIT"
 exclude = [".github", ".devcontainer"]
-rust-version = "1.85.1"
+rust-version = "1.93.1"
 
 [lib]
 
 [dependencies]
-proc-macro2 = { version = "1.0.106", features = ["span-locations"] }
-syn = "2.0.118"
-try_v2_traits = "0.9.1"
+proc-macro2.workspace = true
+syn.workspace = true
+try_v2_traits.workspace = true
 
 [dev-dependencies]
-proc_macro2_diagnostic_fixture = { workspace = true }
-quote = "1.0.46"
-trybuild = "1.0.117"
+proc_macro2_diagnostic_fixture.workspace = true
+quote.workspace = true
+trybuild.workspace = true
 
 [build-dependencies]
-autocfg = { workspace = true }
-ninja-build_rs = { workspace = true }
+build_safely.workspace = true
 
 [workspace]
 members = ["tests/compilation"]
 
 [workspace.dependencies]
-ninja-build_rs = "0.2.1"
-autocfg = "1.5.0"
+build_safely = "0.5.1"
+proc-macro2 = { version = "1.0.106", features = ["span-locations"] }
+quote = "1.0.46"
+syn = "2.0.118"
+try_v2_traits = "0.10.0"
+trybuild = "1.0.117"
 
 proc_macro2_diagnostic = { path = "." }
 proc_macro2_diagnostic_fixture = { path = "tests/compilation" }
