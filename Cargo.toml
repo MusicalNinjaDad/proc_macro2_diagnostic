@@ -11,7 +11,7 @@ repository = "https://github.com/MusicalNinjaDad/proc_macro2_diagnostic"
 categories = ["development-tools"]
 license = "MIT"
 exclude = [".github", ".devcontainer"]
-rust-version = "1.85.1"
+rust-version = "1.93.1"
 
 [lib]
 
