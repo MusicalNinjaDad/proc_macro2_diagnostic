@@ -10,9 +10,16 @@ fn main() -> Result<()> {
 
     ac.emit_unstable_feature(proc_macro_diagnostic, &allowed_features);
 
-    ac.emit_unstable_feature(never_type, &allowed_features);
-    ac.emit_unstable_feature(try_trait_v2, &allowed_features);
-    ac.emit_unstable_feature(try_trait_v2_residual, &allowed_features);
+    ac.emit_unstable_feature_bundle(
+        [
+            iterator_try_collect,
+            never_type,
+            try_trait_v2,
+            try_trait_v2_residual,
+        ],
+        &allowed_features,
+        "try_bundle",
+    );
 
     Ok(())
 }
