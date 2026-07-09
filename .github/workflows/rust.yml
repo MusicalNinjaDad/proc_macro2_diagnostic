@@ -54,7 +54,7 @@ jobs:
       if: ${{ matrix.allow-features }}
       run: echo 'unstable.allow-features = ${{ matrix.allow-features }}' > .cargo/config.toml
     - name: Run tests
-      run: cargo +${{ matrix.channel }} test | grep '"${{ matrix.suite }}"'
+      run: cargo +${{ matrix.channel }} test | grep "${{ matrix.suite }}"
 
   lint:
     needs: skip_check
