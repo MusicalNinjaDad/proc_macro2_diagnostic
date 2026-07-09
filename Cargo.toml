@@ -32,7 +32,7 @@ build_safely.workspace = true
 members = ["tests/compilation"]
 
 [workspace.dependencies]
-build_safely = "0.5.0"
+build_safely = "0.5.1"
 proc-macro2 = { version = "1.0.106", features = ["span-locations"] }
 quote = "1.0.46"
 syn = "2.0.118"
@@ -41,3 +41,6 @@ trybuild = "1.0.117"
 
 proc_macro2_diagnostic = { path = "." }
 proc_macro2_diagnostic_fixture = { path = "tests/compilation" }
+
+[patch.crates-io]
+build_safely = { git = "https://github.com/MusicalNinjaDad/build_safely", branch = "has" }
