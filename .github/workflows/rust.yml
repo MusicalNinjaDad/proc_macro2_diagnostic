@@ -36,20 +36,21 @@ jobs:
       matrix:
         channel:
           - "nightly"
-        test_flags: 
+        allow-features:
+          - "[\"proc_macro_span\"]"
+          - "[\"proc_macro_span\",\"try_trait_v2\",\"never_type\",\"try_trait_v2_residual\"]"
+          - "[\"proc_macro_span\",\"proc_macro_diagnostic\"]"
+          - "[\"proc_macro_span\",\"try_trait_v2\",\"never_type\",\"try_trait_v2_residual\",\"proc_macro_diagnostic\"]"
           - ""
-          - "no_diagnostic"
-          - "no_try"
-          - "no_diagnostic:no_try"
         include:
           - channel: "stable"
-            test_flags: ""
-
-    env:
-      PROC_MACRO2_DIAGNOSTIC_TEST: ${{ matrix.test_flags }}
+            allow-features: ""
   
     steps:
     - uses: actions/checkout@v7.0.0
+    - name: set allow-features
+      if: ${{ matrix.allow-features }}
+      run: echo 'unstable.allow-features = ${{ matrix.allow-features }}' > .cargo/config.toml
     - name: Run tests
       run: cargo +${{ matrix.channel }} test
 
@@ -64,21 +65,22 @@ jobs:
       matrix:
         channel:
           - "nightly"
-        test_flags: 
+        allow-features:
+          - "[\"proc_macro_span\"]"
+          - "[\"proc_macro_span\",\"try_trait_v2\",\"never_type\",\"try_trait_v2_residual\"]"
+          - "[\"proc_macro_span\",\"proc_macro_diagnostic\"]"
+          - "[\"proc_macro_span\",\"try_trait_v2\",\"never_type\",\"try_trait_v2_residual\",\"proc_macro_diagnostic\"]"
           - ""
-          - "no_diagnostic"
-          - "no_try"
-          - "no_diagnostic:no_try"
         include:
           - channel: "stable"
-            test_flags: ""
-
-    env:
-      PROC_MACRO2_DIAGNOSTIC_TEST: ${{ matrix.test_flags }}
+            allow-features: ""
 
     steps:
     - uses: actions/checkout@v7.0.0
     - run: rustup install
+    - name: set allow-features
+      if: ${{ matrix.allow-features }}
+      run: echo 'unstable.allow-features = ${{ matrix.allow-features }}' > .cargo/config.toml
     - name: clippy
       run: cargo +${{ matrix.channel }} clippy -- --deny warnings
 
