@@ -12,10 +12,10 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream as TokenStream1;
 use proc_macro2::Span;
-#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+#[cfg(has_try_bundle)]
 use try_v2_traits::{Extract, Transform};
 
-#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+#[cfg(has_try_bundle)]
 use crate::DiagnosticResult_::{Error, Ok as Ok_, Warning};
 
 /// Prelude for easy `*`` imports: `use proc_macro2_diagnostic::prelude::*`
@@ -53,17 +53,17 @@ pub type DiagnosticStream = DiagnosticResult<proc_macro2::TokenStream>;
 ///
 /// ### Stable / Nightly
 /// On stable this will be replaced by a type alias which provides limited ergonomics for `Warning`s.
-#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+#[cfg(has_try_bundle)]
 pub struct DiagnosticResult<T> {
     inner: DiagnosticResult_<T>,
 }
 
-#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+#[cfg(has_try_bundle)]
 impl<T> Transform<T> for DiagnosticResult<T> {}
-#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+#[cfg(has_try_bundle)]
 impl<T> Extract<T> for DiagnosticResult<T> {}
 
-#[cfg(not(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type)))]
+#[cfg(not(has_try_bundle))]
 /// This is a stable interface which provides limited ergonomics for `Warnings`
 ///
 /// # WARNING
@@ -88,13 +88,13 @@ pub trait DiagnosticKind {
 
 impl<T> DiagnosticKind for DiagnosticResult<T> {
     fn kind(&self) -> DiagnosticResultKind {
-        #[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+        #[cfg(has_try_bundle)]
         match self.inner {
             DiagnosticResult_::Ok(_) => DiagnosticResultKind::Ok,
             DiagnosticResult_::Warning(_, _) => DiagnosticResultKind::Warning,
             DiagnosticResult_::Error(_) => DiagnosticResultKind::Error,
         }
-        #[cfg(not(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type)))]
+        #[cfg(not(has_try_bundle))]
         match self {
             Result::Ok(_) => DiagnosticResultKind::Ok,
             Result::Err(_) => DiagnosticResultKind::Error,
@@ -102,11 +102,11 @@ impl<T> DiagnosticKind for DiagnosticResult<T> {
     }
 
     fn is_warning(&self) -> bool {
-        #[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+        #[cfg(has_try_bundle)]
         {
             matches!(&self.kind(), DiagnosticResultKind::Warning)
         }
-        #[cfg(not(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type)))]
+        #[cfg(not(has_try_bundle))]
         {
             // Warnings cannot be carried alongside values without try_trait_v2
             false
@@ -121,7 +121,7 @@ impl<T> DiagnosticKind for DiagnosticResult<T> {
 #[derive(Clone, Debug)]
 /// Indirection via hidden inner to ensure invariant:
 ///   - Warning/Error must hold correct kind of Diagnostic
-#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+#[cfg(has_try_bundle)]
 enum DiagnosticResult_<T> {
     Ok(T),
     Warning(T, Diagnostic),
@@ -131,11 +131,11 @@ enum DiagnosticResult_<T> {
 /// Create an `Ok` result.
 #[expect(non_snake_case, reason = "same feel as a Result type alias")]
 pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
-    #[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+    #[cfg(has_try_bundle)]
     {
         DiagnosticResult { inner: Ok_(val) }
     }
-    #[cfg(not(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type)))]
+    #[cfg(not(has_try_bundle))]
     {
         Result::Ok(val)
     }
@@ -147,13 +147,13 @@ pub fn Ok<T>(val: T) -> DiagnosticResult<T> {
 /// this means you can use format_args!() to avoid intermediate allocations.
 pub fn error<T, MSG: ToString>(message: MSG) -> DiagnosticResult<T> {
     let diagnostic = Diagnostic::new(Level::Error, Span::call_site(), message);
-    #[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+    #[cfg(has_try_bundle)]
     {
         DiagnosticResult {
             inner: Error(diagnostic),
         }
     }
-    #[cfg(not(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type)))]
+    #[cfg(not(has_try_bundle))]
     {
         Err(diagnostic)
     }
@@ -171,13 +171,13 @@ pub fn error_spanned<T, MSG: ToString, SPN: MultiSpan>(
     message: MSG,
 ) -> DiagnosticResult<T> {
     let diagnostic = Diagnostic::new(Level::Error, span, message);
-    #[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+    #[cfg(has_try_bundle)]
     {
         DiagnosticResult {
             inner: Error(diagnostic),
         }
     }
-    #[cfg(not(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type)))]
+    #[cfg(not(has_try_bundle))]
     {
         Err(diagnostic)
     }
@@ -214,13 +214,13 @@ pub fn warn_spanned<T, MSG: ToString, SPN: MultiSpan>(
     message: MSG,
 ) -> DiagnosticResult<T> {
     let warning = Diagnostic::new(Level::Warning, span, message);
-    #[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+    #[cfg(has_try_bundle)]
     {
         DiagnosticResult {
             inner: Warning(value, warning),
         }
     }
-    #[cfg(not(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type)))]
+    #[cfg(not(has_try_bundle))]
     {
         warning.emit();
         Result::Ok(value)
@@ -336,11 +336,11 @@ where
             Result::Err(e) => {
                 let mut diagnostic = Diagnostic::from(e);
                 diagnostic.add_help(span, message);
-                #[cfg(not(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type)))]
+                #[cfg(not(has_try_bundle))]
                 {
                     Err(diagnostic)
                 }
-                #[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+                #[cfg(has_try_bundle)]
                 {
                     DiagnosticResult {
                         inner: Error(diagnostic),
@@ -360,11 +360,11 @@ where
             Result::Err(e) => {
                 let mut diagnostic = Diagnostic::from(e);
                 diagnostic.add_note(span, message);
-                #[cfg(not(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type)))]
+                #[cfg(not(has_try_bundle))]
                 {
                     Err(diagnostic)
                 }
-                #[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+                #[cfg(has_try_bundle)]
                 {
                     DiagnosticResult {
                         inner: Error(diagnostic),
@@ -382,7 +382,7 @@ where
     }
 }
 
-#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+#[cfg(has_try_bundle)]
 impl<T> AsDiagnostic<T> for DiagnosticResult<T> {
     fn add_help<MSG: ToString, SPN: MultiSpan>(
         mut self,
@@ -420,12 +420,7 @@ impl<T> AsDiagnostic<T> for DiagnosticResult<T> {
     }
 }
 
-#[cfg(all(
-    has_try_trait_v2,
-    has_try_trait_v2_residual,
-    has_never_type,
-    has_iterator_try_collect
-))]
+#[cfg(has_try_bundle)]
 impl<T, V> FromIterator<DiagnosticResult<T>> for DiagnosticResult<V>
 where
     V: FromIterator<T>,
@@ -435,7 +430,7 @@ where
     }
 }
 
-#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+#[cfg(has_try_bundle)]
 // TODO: use traits from try_v2
 impl<T> DiagnosticResult<T> {
     pub fn is_ok(&self) -> bool {
@@ -657,7 +652,7 @@ impl MultiSpan for &[Span] {
 /// - `Warning(val, diag)` -> `val` _and_ emits `diag` immediately
 /// - `Err(diag)` -> short-circuits with `Err(diag)` but _does NOT emit_ `diag` as this would lead to
 ///   repeat emissions
-#[cfg(all(has_never_type, has_try_trait_v2, has_never_type))]
+#[cfg(has_try_bundle)]
 impl<T> std::ops::Try for DiagnosticResult<T> {
     type Output = T;
 
@@ -679,7 +674,7 @@ impl<T> std::ops::Try for DiagnosticResult<T> {
     }
 }
 
-#[cfg(all(has_never_type, has_try_trait_v2, has_never_type, has_never_type))]
+#[cfg(has_try_bundle)]
 impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     fn from_residual(residual: DiagnosticResult<!>) -> Self {
         match residual.inner {
@@ -690,12 +685,12 @@ impl<T> std::ops::FromResidual<DiagnosticResult<!>> for DiagnosticResult<T> {
     }
 }
 
-#[cfg(all(has_never_type, has_try_trait_v2_residual, has_never_type))]
+#[cfg(has_try_bundle)]
 impl<T> std::ops::Residual<T> for DiagnosticResult<!> {
     type TryType = DiagnosticResult<T>;
 }
 
-#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+#[cfg(has_try_bundle)]
 impl<T, E> std::ops::FromResidual<Result<std::convert::Infallible, E>> for DiagnosticResult<T>
 where
     E: Into<Diagnostic>,
@@ -709,7 +704,7 @@ where
     }
 }
 
-#[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+#[cfg(has_try_bundle)]
 impl<T, E> From<E> for DiagnosticResult<T>
 where
     E: Into<Diagnostic> + std::error::Error,
@@ -730,7 +725,7 @@ pub trait ToTokens {
 
 impl ToTokens for DiagnosticStream {
     fn to_tokens(self) -> TokenStream1 {
-        #[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))]
+        #[cfg(has_try_bundle)]
         match self.inner {
             Ok_(t) => t.into(),
             Warning(t, warning) => {
@@ -739,7 +734,7 @@ impl ToTokens for DiagnosticStream {
             }
             Error(error) => error.emit(),
         }
-        #[cfg(not(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type)))]
+        #[cfg(not(has_try_bundle))]
         match self {
             Self::Ok(t) => t.into(),
             Self::Err(error) => error.emit(),
@@ -763,7 +758,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(has_try_trait_v2, has_try_trait_v2_residual, has_never_type))] // Cannot test without, warning would be emitted on construction.
+    #[cfg(has_try_bundle)] // Cannot test without, warning would be emitted on construction.
     fn is_warning() {
         assert!(warn_spanned((), Span::call_site(), "foo").is_warning());
     }
