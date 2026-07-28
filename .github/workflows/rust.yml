@@ -45,7 +45,7 @@ jobs:
             allow-features: ""
   
     steps:
-    - uses: actions/checkout@v7.0.0
+    - uses: actions/checkout@v7.0.1
     - name: set allow-features
       if: ${{ matrix.allow-features }}
       run: echo 'unstable.allow-features = ${{ matrix.allow-features }}' > .cargo/config.toml
@@ -72,7 +72,7 @@ jobs:
             allow-features: ""
 
     steps:
-    - uses: actions/checkout@v7.0.0
+    - uses: actions/checkout@v7.0.1
     - run: rustup install
     - name: set allow-features
       if: ${{ matrix.allow-features }}
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v7.0.0
+    - uses: actions/checkout@v7.0.1
     - name: fmt
       run: cargo fmt --check
 
@@ -100,7 +100,7 @@ jobs:
       RUSTC_BOOTSTRAP: 1
 
     steps:
-    - uses: actions/checkout@v7.0.0
+    - uses: actions/checkout@v7.0.1
     - name: install cargo-msrv
       uses: taiki-e/install-action@v2.83.4
       with:
