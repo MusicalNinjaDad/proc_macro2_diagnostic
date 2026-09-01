@@ -1,6 +1,6 @@
 [package]
 name = "proc_macro2_diagnostic"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2024"
 readme = "README.md"
 description = "Use `Diagnostic` compiler messages from proc_macro2 code with Result-like syntax."
@@ -32,12 +32,12 @@ build_safely.workspace = true
 members = ["tests/compilation"]
 
 [workspace.dependencies]
-build_safely = "0.5.1"
-proc-macro2 = { version = "1.0.106", features = ["span-locations"] }
-quote = "1.0.46"
-syn = "3.0.0"
-try_v2_traits = "0.10.0"
-trybuild = "1.0.117"
+build_safely = "0.5.4"
+proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
+quote = "1.0.47"
+syn = "3.0.4"
+try_v2_traits = "0.10.1"
+trybuild = "1.0.120"
 
 proc_macro2_diagnostic = { path = "." }
 proc_macro2_diagnostic_fixture = { path = "tests/compilation" }
