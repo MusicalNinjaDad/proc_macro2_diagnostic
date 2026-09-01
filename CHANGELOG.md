@@ -1,5 +1,11 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.8.0]
+
+### Breaking changes
+
+- Update to use `syn` v3.x
+
 ## [v0.7.0]
 
 ### Breaking changes
