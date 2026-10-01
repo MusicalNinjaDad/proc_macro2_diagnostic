@@ -32,7 +32,7 @@ build_safely.workspace = true
 members = ["tests/compilation"]
 
 [workspace.dependencies]
-build_safely = "0.5.4"
+build_safely = "0.6.0"
 proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
 quote = "1.0.47"
 syn = "3.0.4"
