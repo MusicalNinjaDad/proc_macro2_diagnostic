@@ -12,6 +12,7 @@ categories = ["development-tools"]
 license = "MIT"
 exclude = [".github", ".devcontainer"]
 rust-version = "1.93.1"
+resolver = "3"
 
 [lib]
 
