@@ -36,8 +36,11 @@ build_safely = "0.6.0"
 proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
 quote = "1.0.47"
 syn = "3.0.4"
-try_v2 = { version = "0.11.0", default-features = false, features = ["traits"] }
+try_v2 = { version = "0.11.1", default-features = false, features = ["traits"] }
 trybuild = "1.0.120"
 
 proc_macro2_diagnostic = { path = "." }
 proc_macro2_diagnostic_fixture = { path = "tests/compilation" }
+
+[patch.crates-io]
+try_v2 = { git = "https://github.com/MusicalNinjaDad/try_v2", branch = "diagnostic_result_081" }
