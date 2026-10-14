@@ -42,3 +42,6 @@ trybuild = "1.0.120"
 
 proc_macro2_diagnostic = { path = "." }
 proc_macro2_diagnostic_fixture = { path = "tests/compilation" }
+
+[patch.crates-io]
+try_v2_traits = { git = "https://github.com/MusicalNinjaDad/try_v2", branch = "deps" }
