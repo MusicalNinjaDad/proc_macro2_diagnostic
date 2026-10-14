@@ -4,7 +4,7 @@
 
 ### Technical
 
-- Bump dependency: `try_v2_traits = "0.11.0"`
+- Bump dependency: `try_v2_traits = "0.11.1"`
 
 ## [v0.8.0]
 
