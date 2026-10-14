@@ -33,10 +33,10 @@ members = ["tests/compilation"]
 resolver = "3"
 
 [workspace.dependencies]
-build_safely = "0.6.0"
+build_safely = "0.6.1"
 proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
 quote = "1.0.47"
-syn = "3.0.4"
+syn = "3.0.9"
 try_v2_traits = "0.11.0"
 trybuild = "1.0.120"
 
