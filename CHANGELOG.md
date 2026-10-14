@@ -1,5 +1,11 @@
 # proc_macro2_diagnostic changelog
 
+## [v0.8.1]
+
+### Technical
+
+- Bump dependency: `try_v2_traits = "0.11.0"`
+
 ## [v0.8.0]
 
 ### Breaking changes
